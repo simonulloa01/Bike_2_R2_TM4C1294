@@ -1,8 +1,9 @@
+
+
 #include <libopencm3/lm4f/gpio.h>
 #include <libopencm3/lm4f/systemcontrol.h>
 
 int main(void) {
-
     periph_clock_enable(RCC_GPION);
     
     // Configure PN0 as output
