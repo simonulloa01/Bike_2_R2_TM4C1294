@@ -1,5 +1,3 @@
-
-
 #include <libopencm3/lm4f/gpio.h>
 #include <libopencm3/lm4f/systemcontrol.h>
 
@@ -18,6 +16,6 @@ int main(void) {
             __asm__("nop");
         }
     }
-    
+
     return 0;
 }
