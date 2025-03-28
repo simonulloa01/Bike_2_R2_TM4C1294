@@ -4,8 +4,8 @@
 #include "defs.h"
 
 // Define the irreducible polynomial for modular operations. 
-// this will be a polynomial depicted as a binary number with a 
-// 1 in the LSB bit and the MSB or bit 10163 (R_BITS).
+// In this case the polynomial is x^10162 + 1. Therefore, a 
+// 1 in the LSB bit 0 and the MSB or bit 10163 (R_BITS).
 #define IRREDUCIBLE_POLY 
 
 void modInv(uint8_t *dst, const uint8_t *src);
