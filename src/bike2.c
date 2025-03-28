@@ -1,30 +1,31 @@
 #include "bike2.h"
 
-void keygen(PublicKey *pk, PrivateKey *sk)
+void keygen(uint8_t *pk, uint8_t *sk)
 {
-    uint8_t h0[KEY_SIZE];
-    uint8_t h1[KEY_SIZE];
-    uint8_t h0_inv[KEY_SIZE];
+    uint8_t h0[PUBLIC_KEY_SIZE];
+    uint8_t h1[PUBLIC_KEY_SIZE];
+    uint8_t h0_inv[PUBLIC_KEY_SIZE];
+    uint32_t rngState = 0;
 
     // todo
-    randSample(h0);
-    randSample(h1);
+    randSample(h0, PUBLIC_KEY_WEIGHT, PUBLIC_KEY_BITS, &rngState);
+    randSample(h1, PUBLIC_KEY_WEIGHT, PUBLIC_KEY_BITS, &rngState);
 
-    // sk = h1 || h0
-    memcpy(sk, h1, KEY_SIZE);
-    memcpy(sk + KEY_SIZE, h0, KEY_SIZE);
+    // sk = h0 || h1
+    memcpy(sk, h0, PUBLIC_KEY_SIZE);
+    memcpy(sk + PUBLIC_KEY_SIZE, h1, PUBLIC_KEY_SIZE);
 
-
+    // pk = h1 * h0^-1
     modInv(h0_inv, h0);
-    modMult(pk, h0, h0_inv);
+    modMult(pk, h1, h0_inv);
 }
 
-void encrypt(PublicKey *pk, Ciphertext *ct, SharedSecret *ss)
+void encrypt(uint8_t *pk, uint8_t *ct, uint8_t *ss)
 {
 
 }
 
-void decrypt(PrivateKey *sk, Ciphertext *ct, SharedSecret *ss)
+void decrypt(uint8_t *sk, uint8_t *ct, uint8_t *ss)
 {
 
 }
