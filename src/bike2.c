@@ -1,13 +1,16 @@
 #include "bike2.h"
 
-void keygen(uint8_t *pk, uint8_t *sk)
+void keygen(uint8_t *pk, uint8_t *sk, const uint8_t* seed)
 {
     uint8_t h0[PUBLIC_KEY_SIZE];
     uint8_t h1[PUBLIC_KEY_SIZE];
     uint8_t h0_inv[PUBLIC_KEY_SIZE];
-    uint32_t rngState = 0;
+    aes_ctr_prf_state rngState = {0};
 
-    // todo
+    //init rng
+    init_aes_ctr_prf_state(&rngState, seed);
+
+    // randomly generate h0 and h1
     randSample(h0, PUBLIC_KEY_WEIGHT, PUBLIC_KEY_BITS, &rngState);
     randSample(h1, PUBLIC_KEY_WEIGHT, PUBLIC_KEY_BITS, &rngState);
 

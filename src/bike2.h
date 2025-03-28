@@ -6,7 +6,7 @@
 #include "modArith.h"
 #include "rng.h"
 
-void keygen(uint8_t *pk, uint8_t *sk);
+void keygen(uint8_t *pk, uint8_t *sk, const uint8_t* seed);
 
 void encrypt(uint8_t *pk, uint8_t *ct, uint8_t *ss);
 
