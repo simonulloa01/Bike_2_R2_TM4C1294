@@ -6,20 +6,20 @@ void perform_aes(uint8_t *ciphertext, aes_ctr_prf_state *rngState)
     rngState->ctr.qwords[0]++;
 }
 
-void aes_ctr_prf(uint8_t *a, aes_ctr_prf_state *rngState, const uint32_t len)
+void aes_ctr_prf(uint8_t *random, aes_ctr_prf_state *rngState, const uint32_t len)
 {
     //When Len i smaller then whats left in the buffer 
     //No need in additional AES.
     if ((len + rngState->pos) <= AES256_BLOCK_SIZE)
     {
-        memcpy(a, &rngState->buffer.bytes[rngState->pos], len);
+        memcpy(random, &rngState->buffer.bytes[rngState->pos], len);
         rngState->pos += len;
     }
 
     //if s.pos != AES256_BLOCK_SIZE then copy whats left in the buffer.
     //else copy zero bytes.
     uint32_t idx = AES256_BLOCK_SIZE - rngState->pos;
-    memcpy(a, &rngState->buffer.bytes[rngState->pos], idx);
+    memcpy(random, &rngState->buffer.bytes[rngState->pos], idx);
 
     //Init s.pos;
     rngState->pos = 0;
@@ -27,7 +27,7 @@ void aes_ctr_prf(uint8_t *a, aes_ctr_prf_state *rngState, const uint32_t len)
     //Copy full AES blocks.
     while((len - idx) >= AES256_BLOCK_SIZE)
     {
-        perform_aes(&a[idx], rngState);
+        perform_aes(&random[idx], rngState);
         idx += AES256_BLOCK_SIZE;
     }
 
@@ -35,20 +35,37 @@ void aes_ctr_prf(uint8_t *a, aes_ctr_prf_state *rngState, const uint32_t len)
 
     //Copy the tail.
     rngState->pos = len - idx;
-    memcpy(&a[idx], rngState->buffer.bytes, rngState->pos);
+    memcpy(&random[idx], rngState->buffer.bytes, rngState->pos);
+}
+
+uint8_t bit_scan_reverse(uint64_t val)
+{
+    //index is always smaller than 64.
+    uint8_t index = 0;
+
+    while(val != 0)
+    {
+        val >>= 1;
+        index++;
+    }
+
+    return index;
 }
 
 uint32_t randModLen(const uint32_t len, aes_ctr_prf_state *rngState)
 {
-    uint64_t mask;
+    uint64_t mask = (1 << bit_scan_reverse(len)) - 1;
     uint32_t retVal;
 
+    //todo why are we looping?
     do
     {
-        // todo
-        uint8_t a[10];
-        aes_ctr_prf(a, rngState, len);
-    } while (1 == 1);
+        // genrate random number
+        aes_ctr_prf((uint8_t*)&retVal, rngState, sizeof(retVal));
+
+        // mask to stay in mod
+        retVal &= mask;
+    } while (retVal >= len);
 
     return retVal;
 }

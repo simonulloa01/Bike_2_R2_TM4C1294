@@ -28,6 +28,8 @@ void perform_aes(uint8_t* ciphertext, aes_ctr_prf_state* rngState);
 
 void aes_ctr_prf(uint8_t* a, aes_ctr_prf_state* rngState, const uint32_t len);
 
+uint8_t bit_scan_reverse(uint64_t val);
+
 uint32_t randModLen(const uint32_t len, aes_ctr_prf_state* rngState);
 
 void randSample(uint8_t *result, const uint32_t weight, const uint32_t len, aes_ctr_prf_state* rngState);
