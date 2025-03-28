@@ -8,8 +8,8 @@
 
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t* seed);
 
-void encrypt(uint8_t *pk, uint8_t *ct, uint8_t *ss);
+void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t* seed);
 
-void decrypt(uint8_t *sk, uint8_t *ct, uint8_t *ss);
+bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t* seed);
 
 #endif
