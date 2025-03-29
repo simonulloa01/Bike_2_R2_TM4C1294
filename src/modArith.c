@@ -46,3 +46,45 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
         *dst = *a ^ *b;
     }
 }
+
+void polyMod(uint8_t *poly)
+{
+    int degree = 5; // test value -- 10163 is actual real value 
+    int pow = 0;
+    uint8_t tmpPoly = poly;
+    uint8_t result = 0;
+    uint8_t irreduciblePoly = 0x22; // test value x^5 + x -- actual value is x^10163 + x
+
+    // For modular reduction, we can perform the mod on each term individually.
+    // Add each term together to form the final version of the polynomial.
+    while (tmpPoly)
+    {
+        // When the power is less than the degree the result will be the
+        // term that we are currently on -- no processing.  
+        if (pow < degree)
+        {
+            result ^= (1 << pow);
+        }
+        // When pow and degree are equal, we can XOR the irreducible polynomial
+        // with a polynomial with one term of degree pow. For example, if pow is 5
+        // the polynomial will be x^5. 
+        else if (pow == degree)
+        {
+            result ^= ((1 << pow) ^ irreduciblePoly);
+        }
+        // When pow is greater than degree we can multiply the irreduciblePoly
+        // and the polynomial term that is higher than the degree in the field.
+        // This makes it so that pow and degree are equivalent, allowing us to 
+        // perform the operation we did eaerlier. 
+        else if (pow > degree)
+        {
+            uint8_t tmpRes = 0; 
+            uint8_t powPoly = (1 << pow);
+            modMult(&tmpRes, &irreduciblePoly, &powPoly);
+            result ^= ((1 << pow) ^ irreduciblePoly);
+
+        }
+        pow++;
+    }
+    *poly = result;
+}

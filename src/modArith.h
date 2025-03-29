@@ -14,4 +14,7 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b);
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b);
 
+void polyMod(uint8_t *poly);
+
+
 #endif
