@@ -53,6 +53,7 @@ bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t *s
 {
     bool retVal = false;
     uint8_t e[N_SIZE];
+    int hamWeight = 0;
 
     //compute syndrome
     //todo
@@ -61,7 +62,25 @@ bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t *s
     //todo
 
     //check hamming weight of e
-    //todo
+    hamWeight = hammingWeight(&e);
 
     return retVal;
+}
+
+int hammingWeight(const uint8_t *poly)
+{
+    int weight = 0; 
+    if (poly != NULL)
+    {
+        // While the polynomial has a valid value. 
+        while (poly) 
+        {
+            // If the value is a 1 then we can increment the weight by 1. 
+            if (poly & 1) 
+            {
+                weight++; 
+            }
+        }
+    }
+    return weight;
 }

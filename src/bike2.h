@@ -12,4 +12,6 @@ void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t* seed);
 
 bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t* seed);
 
+int hammingWeight(const uint8_t *poly);
+
 #endif
