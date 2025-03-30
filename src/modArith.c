@@ -1,5 +1,5 @@
-#if 0
 
+#include <stddef.h>
 #include "modArith.h"
 
 void modInv(uint8_t *dst, const uint8_t *src)
@@ -9,6 +9,7 @@ void modInv(uint8_t *dst, const uint8_t *src)
 
 void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 {
+    #if 0
     // Do not perform arithmetic on polynomial's a and b if they are NULL. 
     if ((a != NULL) && (b != NULL))
     {
@@ -33,11 +34,13 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b)
         // Perform polynomial reduction -- by the irreducible polynomial.
         // TODO
     }
+    #endif
 
 }
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 {
+    
     // Do not perform arithmetic on polynomial's a and b if they are NULL. 
     if ((a != NULL) && (b != NULL))
     {
@@ -47,10 +50,12 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
         // is its own inverse.  
         *dst = *a ^ *b;
     }
+    
 }
 
 void polyMod(uint8_t *poly)
 {
+    #if 0
     int degree = 5; // test value -- 10163 is actual real value 
     int pow = 0;
     uint8_t tmpPoly = poly;
@@ -89,5 +94,5 @@ void polyMod(uint8_t *poly)
         pow++;
     }
     *poly = result;
+    #endif
 }
-#endif

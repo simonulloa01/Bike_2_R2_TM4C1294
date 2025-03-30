@@ -1,5 +1,13 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <unity.h>
+
+/**
+ * @brief Convert a hex string to binary.
+ */
+
+
 
 void setUp(void)
 {
@@ -11,8 +19,7 @@ void tearDown(void)
 
 void test_key_gen(void)
 {
-    TEST_ASSERT_EQUAL(1, 1);
-    
+    TEST_PASS();
 }
 
 void test_encap(void)
@@ -34,3 +41,4 @@ int main(void)
     RUN_TEST(test_decaps);
     return UNITY_END();
 }
+
