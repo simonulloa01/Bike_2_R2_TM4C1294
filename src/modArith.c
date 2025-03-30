@@ -1,3 +1,5 @@
+#if 0
+
 #include "modArith.h"
 
 void modInv(uint8_t *dst, const uint8_t *src)
@@ -88,3 +90,4 @@ void polyMod(uint8_t *poly)
     }
     *poly = result;
 }
+#endif

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 
-int main() {
+int test_decap_main() {
     int a = 1;
     int b = 2;
     return a != b;
