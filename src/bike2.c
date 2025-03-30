@@ -1,4 +1,3 @@
-#if 0
 #include "bike2.h"
 
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
@@ -85,4 +84,4 @@ int hammingWeight(const uint8_t *poly)
     }
     return weight;
 }
-#endif
+
