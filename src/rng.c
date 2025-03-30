@@ -1,3 +1,4 @@
+#if false
 #include "rng.h"
 
 void perform_aes(uint8_t *ciphertext, aes_ctr_prf_state *rngState)
@@ -69,7 +70,9 @@ uint32_t randModLen(const uint32_t len, aes_ctr_prf_state *rngState)
 
     return retVal;
 }
-
+/**
+ * @brief Randomly sample a bit array of given length with a given weight
+ */
 void randSample(uint8_t *result, const uint32_t weight, const uint32_t len, aes_ctr_prf_state *rngState)
 {
     uint32_t randomPosition;
@@ -106,3 +109,4 @@ void init_aes_ctr_prf_state(aes_ctr_prf_state* rngState, const uint8_t* seed)
     rngState->ctr.qwords[0]++;
     rngState->pos = 0;
 }
+#endif
