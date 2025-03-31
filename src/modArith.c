@@ -55,7 +55,7 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 
 void polyMod(uint8_t *poly)
 {
-    
+    #if 0
     int degree = 5; // test value -- 10163 is actual real value 
     int pow = 0;
     uint8_t tmpPoly = poly;
@@ -94,5 +94,6 @@ void polyMod(uint8_t *poly)
         pow++;
     }
     *poly = result;
+    #endif
     
 }
