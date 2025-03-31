@@ -48,7 +48,10 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
         // operation. One of the reasons for this is because the inverse of
         // number is itself. For example, 1 plus 1 is 0, since the number 
         // is its own inverse.  
-        *dst = *a ^ *b;
+        for (uint32_t i = 0; i < sizeof(dst); i++)
+        {
+            dst[i] = a[i] ^ b[i];
+        }
     }
     
 }
