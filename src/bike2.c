@@ -1,8 +1,8 @@
-#if FALSE
 #include "bike2.h"
-
+#include "sampling.h"
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
 {
+    #if FALSE
     uint8_t h0[R_SIZE];
     uint8_t h1[R_SIZE];
     uint8_t h0_inv[R_SIZE];
@@ -22,25 +22,31 @@ void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
     // pk = h1 * h0^-1
     modInv(h0_inv, h0);
     modMult(pk, h1, h0_inv);
+    #endif
 }
 
 void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t *seed)
 {
-    #if 0 
+
     uint8_t e[N_SIZE];
-    aes_ctr_prf_state rngState = {0};
+    
+    //aes_ctr_prf_state rngState = {0};
 
     // init rng
-    init_aes_ctr_prf_state(&rngState, seed);
+    //Commented out to compile to device @cgrohs27 we need to fix this openssl doesn't work on this device
+    //init_aes_ctr_prf_state(&rngState, seed);
 
-    // randomly sample e with weight T
-    randSample(e, T, N_BITS, &rngState);
+    // randomly sample e with weight T 
+    //Commented out to compile to device @cgrohs27 we need to fix this openssl doesn't work on this device
+    //randSample(e, T, N_BITS, &rngState);
 
+    memcpy(e, generate_sparse_polynomial(T, N_BITS), N_SIZE);
     // split e into e0 and e1
     uint8_t e0[R_SIZE];
     uint8_t e1[R_SIZE];
     memcpy(e0, e, R_SIZE);
     memcpy(e1, e + R_SIZE, R_SIZE);
+
 
     // ct = (e1*pk + e0)
     uint8_t product[R_SIZE];
@@ -49,7 +55,6 @@ void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t *seed)
 
     // get shared secret
     // todo
-    #endif
 
 }
 
@@ -91,5 +96,3 @@ int hammingWeight(const uint8_t *poly)
     #endif
     return false;
 }
-
-#endif

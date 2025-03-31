@@ -3,7 +3,7 @@
 #define RNG_H
 
 #include <string.h>
-#include <openssl/aes.h>
+#include <wolfssl/wolfcrypt/aes.h>
 #include "defs.h"
 
 // custom unsigned 128 bit type
@@ -21,20 +21,25 @@ typedef struct aes_ctr_prf_state_s
 {
     uint128_t ctr;
     uint128_t buffer;
-    AES_KEY   key;
-    uint8_t   pos;
+    Aes aes;
+    uint8_t pos;
 } aes_ctr_prf_state;
 
-void perform_aes(uint8_t* ciphertext, aes_ctr_prf_state* rngState);
+/**
+ * @brief Performs AES encryption in CTR mode.
+ * @param ciphertext Pointer to the output ciphertext.
+ * @param rngState Pointer to the AES CTR PRF state.
+ */
+void perform_aes(uint8_t *ciphertext, aes_ctr_prf_state *rngState);
 
-void aes_ctr_prf(uint8_t* a, aes_ctr_prf_state* rngState, const uint32_t len);
+void aes_ctr_prf(uint8_t *a, aes_ctr_prf_state *rngState, const uint32_t len);
 
 uint8_t bit_scan_reverse(uint64_t val);
 
-uint32_t randModLen(const uint32_t len, aes_ctr_prf_state* rngState);
+uint32_t randModLen(const uint32_t len, aes_ctr_prf_state *rngState);
 
-void randSample(uint8_t *result, const uint32_t weight, const uint32_t len, aes_ctr_prf_state* rngState);
+void randSample(uint8_t *result, const uint32_t weight, const uint32_t len, aes_ctr_prf_state *rngState);
 
-void init_aes_ctr_prf_state(aes_ctr_prf_state* rngState, const uint8_t* seed);
+void init_aes_ctr_prf_state(aes_ctr_prf_state *rngState, const uint8_t *seed);
 
 #endif

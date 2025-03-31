@@ -1,9 +1,9 @@
-#if false
+
 #include "rng.h"
 
 void perform_aes(uint8_t *ciphertext, aes_ctr_prf_state *rngState)
 {
-    AES_encrypt(rngState->ctr.bytes, ciphertext, &rngState->key);
+    AES_encrypt(rngState->ctr.bytes, ciphertext, &rngState->ctr.bytes);
     rngState->ctr.qwords[0]++;
 }
 
@@ -109,4 +109,3 @@ void init_aes_ctr_prf_state(aes_ctr_prf_state* rngState, const uint8_t* seed)
     rngState->ctr.qwords[0]++;
     rngState->pos = 0;
 }
-#endif

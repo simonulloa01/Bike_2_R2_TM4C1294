@@ -5,7 +5,7 @@
 #include <string.h>
 #include "defs.h"
 #include "modArith.h"
-#include "rng.h"
+// #include "rng.h"
 
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t* seed);
 
