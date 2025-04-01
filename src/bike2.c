@@ -67,23 +67,21 @@ bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t *s
     //todo
 
     //check hamming weight of e
-    hamWeight = hammingWeight(&e);
+    hamWeight = hammingWeight(e, N_SIZE);
 
     return retVal;
 }
 
-int hammingWeight(const uint8_t *poly)
+int hammingWeight(const uint8_t poly[], int length)
 {
     int weight = 0; 
-    if (poly != NULL)
+    for (int i = 0; i < length; i++)
     {
-        // While the polynomial has a valid value. 
-        while (poly) 
+        for (int j = 0; j < BITS_IN_BYTE; j++)
         {
-            // If the value is a 1 then we can increment the weight by 1. 
-            if (poly & 1) 
+            if ((poly[i] >> j) & 1)
             {
-                weight++; 
+                weight++;
             }
         }
     }
