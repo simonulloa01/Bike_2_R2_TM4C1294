@@ -48,14 +48,17 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
         // operation. One of the reasons for this is because the inverse of
         // number is itself. For example, 1 plus 1 is 0, since the number 
         // is its own inverse.  
-        *dst = *a ^ *b;
+        for (uint32_t i = 0; i < sizeof(dst); i++)
+        {
+            dst[i] = a[i] ^ b[i];
+        }
     }
     
 }
 
 void polyMod(uint8_t *poly)
 {
-    
+    #if 0
     int degree = 5; // test value -- 10163 is actual real value 
     int pow = 0;
     uint8_t tmpPoly = poly;
@@ -94,5 +97,6 @@ void polyMod(uint8_t *poly)
         pow++;
     }
     *poly = result;
+    #endif
     
 }
