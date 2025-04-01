@@ -1,0 +1,23 @@
+// Prior to running the verification be sure to have all the valid files. 
+// These include the .bc/.saw/.c/.cry
+print "Loading the bike2_test bit code";
+l <- llvm_load_module "bike2_test.bc";
+
+print "Extracting reference term: addNums";
+addNums <- crucible_llvm_extract l "addNums";
+
+print "Assigning Cryptol implementation: add";
+let {{
+    add : ([32] -> [32] -> [32])
+    add a b = a + b
+}};
+
+// Let each theorem be a proof that each implementation is 
+// equivalent to one another. 
+
+print "Proving equivalence: addNums == add";
+let thm1 = {{ \x -> \y -> addNums x y == add x y}};
+result <- prove z3 thm1;
+print result;
+
+print "Done.";

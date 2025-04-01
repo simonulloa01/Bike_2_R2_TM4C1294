@@ -1,0 +1,4 @@
+
+// Functions to Test 
+add : ([32] -> [32] -> [32])
+add a b = a + b
