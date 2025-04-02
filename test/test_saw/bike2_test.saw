@@ -1,7 +1,7 @@
 // Prior to running the verification be sure to have all the valid files. 
 // These include the .bc/.saw/.c/.cry
 
-// Define constants
+//-----------Functions need to be modified to work with 32-bits--------------
 
 print "Loading the bike2_test bit code";
 l <- llvm_load_module "bike2_test.bc";
@@ -15,11 +15,29 @@ let {{
     add a b = a + b
 }};
 
+print "Extracting reference term: keygen";
+addNums <- crucible_llvm_extract l "keygen";
+
+print "Assigning Cryptol implementation: keyGen_cry";
+let {{
+    keyGen_cry : (GF, GF) -> ([20336], [20336])
+    keyGen_cry (h0, h1) = (pk, sk)
+        where
+            h0_inv = inverse h0
+            pk = prefix # mult h1 h0_inv
+            sk = h0 # h1
+}};
+
 // Let each theorem be a proof that each implementation is 
 // equivalent to one another. 
 print "Proving equivalence: addNums == add";
 let thm1 = {{ \x -> \y -> addNums x y == add x y}};
 result <- prove z3 thm1;
+print result;
+
+print "Proving equivalence: keyGen == keyGen_cry";
+let thm2 = {{ \x -> \y -> keyGen x y == keyGen_cry x y}};
+result <- prove z3 thm2;
 print result;
 
 print "Done.";

@@ -1,0 +1,35 @@
+module GF2_10163 where
+
+type GF = [10168]
+
+irreducible = <| x^^10163 + 1 |>
+
+/**
+ * Multiply two elements in GF(2^10163).
+ */
+mult : GF -> GF -> GF
+mult x y = pmod (pmult x y) irreducible
+
+/**
+ * Add two elements in GF(2^10163).
+ */
+add : GF -> GF -> GF
+add x y = x ^ y
+
+/** A GF(2^10163) value to a power also in the field */
+pow : GF -> GF -> GF
+pow n k = vals ! 0 where
+    sq x = mult x x
+    vals = [1] # [ if i then mult n (sq acc) else sq acc
+        | acc <- vals
+        | i   <- k]
+
+/**
+ * Compute the inverse of a value.
+ *
+ * Mathematically speaking, the inverse isnt' defined for `x = 0`, but
+ * we take the same liberties as the reference and use a method that
+ * returns 0 for the inverse of 0.
+ */
+inverse : GF -> GF
+inverse x = pow x (2^^10163-2)
