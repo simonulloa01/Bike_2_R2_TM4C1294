@@ -1,4 +1,4 @@
-#if false
+#ifdef BUILD_ENVIRONMENT_NATIVE
 #include "rng.h"
 
 void perform_aes(uint8_t *ciphertext, aes_ctr_prf_state *rngState)
@@ -109,4 +109,4 @@ void init_aes_ctr_prf_state(aes_ctr_prf_state* rngState, const uint8_t* seed)
     rngState->ctr.qwords[0]++;
     rngState->pos = 0;
 }
-#endif
+#endif // BUILD_ENVIRONMENT_NATIVE

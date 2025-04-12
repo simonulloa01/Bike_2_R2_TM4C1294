@@ -1,4 +1,5 @@
 
+#ifdef BUILD_ENVIRONMENT_NATIVE
 #ifndef RNG_H
 #define RNG_H
 
@@ -38,3 +39,4 @@ void randSample(uint8_t *result, const uint32_t weight, const uint32_t len, aes_
 void init_aes_ctr_prf_state(aes_ctr_prf_state* rngState, const uint8_t* seed);
 
 #endif
+#endif //BUILD_ENVIRONMENT_NATIVE
