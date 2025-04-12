@@ -6,7 +6,7 @@
 
 typedef struct
 {
-    // the block size(r)
+    // the block size in bytes (r)
     int block_size;
     // the row weight(w)
     int row_weight;
@@ -36,7 +36,7 @@ typedef struct
  * @brief holds the parameters for BIKE-2 CPA with security level 1
  */
 static const bike2_params_t bike2_params_level_1 = {
-    .block_size = R_BITS,
+    .block_size = R_SIZE, 
     .row_weight = W,
     .target_error = T,
     .code_length = N_BITS
