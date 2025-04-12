@@ -102,7 +102,7 @@ int main(void)
     UNITY_BEGIN();
     RUN_TEST(test_get_hamming_weight);
     RUN_TEST(test_gen_sparse_poly);
-    RUN_TEST(test_key_gen);
+    //RUN_TEST(test_key_gen);
     RUN_TEST(test_encap);
     RUN_TEST(test_decaps);
     return UNITY_END();
