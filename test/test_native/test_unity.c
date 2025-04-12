@@ -60,8 +60,8 @@ void test_gen_sparse_poly(void)
 void test_key_gen(void)
 {
     // set the config for thes test
-    u_int8_t pk[bike2_params_level_1.block_size];
-    u_int8_t sk[bike2_params_level_1.block_size * 2];
+    uint8_t pk[bike2_params_level_1.block_size];
+    uint8_t sk[bike2_params_level_1.block_size * 2];
 
     // clear the buffers
     memset(pk, 0, bike2_params_level_1.block_size);
