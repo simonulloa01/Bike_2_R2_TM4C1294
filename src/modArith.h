@@ -8,13 +8,13 @@
 // 1 in the LSB bit 0 and the MSB or bit 10163 (R_BITS).
 #define IRREDUCIBLE_POLY 
 
-void modInv(uint8_t *dst, const uint8_t *src);
+void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size);
 
-void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b);
+void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size);
 
-void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b);
+void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size);
 
-void polyMod(uint8_t *poly);
+void polyMod(uint8_t *poly, const uint32_t size);
 
 
 #endif

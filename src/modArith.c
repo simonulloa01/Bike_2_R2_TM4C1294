@@ -2,12 +2,12 @@
 #include <stddef.h>
 #include "modArith.h"
 
-void modInv(uint8_t *dst, const uint8_t *src)
+void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size)
 {
     // todo
 }
 
-void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b)
+void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
     
     // Do not perform arithmetic on polynomial's a and b if they are NULL. 
@@ -38,7 +38,7 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 
 }
 
-void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
+void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
     
     // Do not perform arithmetic on polynomial's a and b if they are NULL. 
@@ -56,7 +56,7 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
     
 }
 
-void polyMod(uint8_t *poly)
+void polyMod(uint8_t *poly, const uint32_t size)
 {
     #if 0
     int degree = 5; // test value -- 10163 is actual real value 
