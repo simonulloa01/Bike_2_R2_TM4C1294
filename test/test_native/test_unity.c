@@ -19,15 +19,12 @@ void test_get_hamming_weight(void)
     const size_t byte_len = (LEN_BITS + 7u) / 8u;
     uint8_t poly[byte_len];
 
-    
     memset(poly, 0xFF, byte_len);
     TEST_ASSERT_EQUAL(LEN_BITS, get_hamming_weight(poly, LEN_BITS));
 
-    
     memset(poly, 0x00, byte_len);
     TEST_ASSERT_EQUAL(0, get_hamming_weight(poly, LEN_BITS));
 
-    
     poly[0] = 0b10101010;
     poly[1] = 0b11001100;
     TEST_ASSERT_EQUAL(8, get_hamming_weight(poly, LEN_BITS));
@@ -39,11 +36,9 @@ void test_gen_sparse_poly(void)
     const size_t byte_len = (LEN_BITS + 7u) / 8u;
     uint8_t poly[byte_len];
 
-   
     memset(poly, 0, byte_len);
     generate_sparse_polynomial(poly, byte_len, 128, LEN_BITS);
 
-   
     uint32_t count = 0;
     for (uint32_t i = 0; i < LEN_BITS; i++)
     {
@@ -60,7 +55,7 @@ void test_gen_sparse_poly(void)
 void test_key_gen(void)
 {
     // set the config for thes test
-    uint8_t pk[bike2_params_level_1.block_size];
+    uint8_t pk[bike2_params_level_1.block_size * 2];
     uint8_t sk[bike2_params_level_1.block_size * 2];
 
     // clear the buffers
@@ -102,7 +97,7 @@ int main(void)
     UNITY_BEGIN();
     RUN_TEST(test_get_hamming_weight);
     RUN_TEST(test_gen_sparse_poly);
-    //RUN_TEST(test_key_gen);
+    RUN_TEST(test_key_gen);
     RUN_TEST(test_encap);
     RUN_TEST(test_decaps);
     return UNITY_END();

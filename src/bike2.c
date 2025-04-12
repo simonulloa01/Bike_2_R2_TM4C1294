@@ -1,5 +1,5 @@
 #include "bike2.h"
-#ifdef BUILD_ENVIRONMENT_NATIVE
+#if 0
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
 {
     uint8_t h0[R_SIZE];
