@@ -9,5 +9,5 @@ void generate_sparse_polynomial(
     uint32_t weight,
     uint32_t len_bits);
 
-u_int8_t get_hamming_weight(const uint8_t *poly, size_t len_bits);
+uint8_t get_hamming_weight(const uint8_t *poly, size_t len_bits);
 #endif
