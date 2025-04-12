@@ -3,8 +3,8 @@
 
 
 uint8_t* generate_sparse_polynomial(const uint32_t weight, const uint32_t len) {
-    // Calculate number of bytes needed (ceiling of len/8)
     
+    // calculate number of bytes needed (ceiling of len/8)
     uint8_t* polynomial = (uint8_t*)calloc(len, 1);
     if (polynomial == NULL) {
         return NULL; 
