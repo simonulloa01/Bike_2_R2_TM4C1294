@@ -1,5 +1,4 @@
 
-#include <stddef.h>
 #include "modArith.h"
 
 void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size)
@@ -9,94 +8,70 @@ void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size)
 
 void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
-    
-    // Do not perform arithmetic on polynomial's a and b if they are NULL. 
+    // Do not perform arithmetic on polynomial's a and b if they are NULL.
     if ((a != NULL) && (b != NULL))
     {
-        // Perform polynomial multiplication 
-        uint8_t result = 0;
-        uint8_t shift = 0;
-        uint8_t poly1 = *a;
-        uint8_t poly2 = *b;
-        
-        // While the polynomial still has valid value check each term.
-        while (poly2) 
+        uint8_t product[size * 2];
+        for (uint32_t byteIndex = 0; byteIndex < size; byteIndex++)
         {
-            if (poly2 & 1) 
+            uint16_t productPart = 0x0000;
+            for (uint32_t bitIndex = 0; bitIndex < 8; bitIndex++)
             {
-                result ^= (poly1 << shift);
+                bool bit = a[byteIndex] & (0x01 << bitIndex);
+                if (bit)
+                {
+                    productPart |= b[byteIndex] << bitIndex;
+                }
             }
-            shift++;
-            poly2 >>= 1;
+            product[byteIndex] |= (uint8_t)(productPart & 0x00FF);
+            product[byteIndex + 1] |= (uint8_t)(productPart >> 8);
         }
-        
-        *dst = result;
-        // Perform polynomial reduction -- by the irreducible polynomial.
-        // TODO
-    }
-    
 
+        polyMod(dst, product, size * 2);
+    }
 }
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
-    
-    // Do not perform arithmetic on polynomial's a and b if they are NULL. 
+
+    // Do not perform arithmetic on polynomial's a and b if they are NULL.
     if ((a != NULL) && (b != NULL))
     {
         // Adding the two binary polynomials is the equivalent of the XOR
         // operation. One of the reasons for this is because the inverse of
-        // number is itself. For example, 1 plus 1 is 0, since the number 
-        // is its own inverse.  
-        for (uint32_t i = 0; i < sizeof(dst); i++)
+        // number is itself. For example, 1 plus 1 is 0, since the number
+        // is its own inverse.
+        for (uint32_t i = 0; i < size; i++)
         {
             dst[i] = a[i] ^ b[i];
         }
     }
-    
 }
 
-void polyMod(uint8_t *poly, const uint32_t size)
+// Note: dst is expected to be an array of length R_SIZE
+void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size)
 {
-    #if 0
-    int degree = 5; // test value -- 10163 is actual real value 
-    int pow = 0;
-    uint8_t tmpPoly = poly;
-    uint8_t result = 0;
-    uint8_t irreduciblePoly = 0x22; // test value x^5 + x -- actual value is x^10163 + x
+    // copy over the operand and it will be worked down to the remainder
+    uint8_t remainder[size];
+    memcpy(remainder, a, size);
 
-    // For modular reduction, we can perform the mod on each term individually.
-    // Add each term together to form the final version of the polynomial.
-    while (tmpPoly)
+    // loop down to the 
+    for (uint32_t i = size - 1; i >= R_SIZE; i--)
     {
-        // When the power is less than the degree the result will be the
-        // term that we are currently on -- no processing.  
-        if (pow < degree)
+        uint8_t bitMask = 0x01;
+        while (remainder[i] != 0)
         {
-            result ^= (1 << pow);
-        }
-        // When pow and degree are equal, we can XOR the irreducible polynomial
-        // with a polynomial with one term of degree pow. For example, if pow is 5
-        // the polynomial will be x^5. 
-        else if (pow == degree)
-        {
-            result ^= ((1 << pow) ^ irreduciblePoly);
-        }
-        // When pow is greater than degree we can multiply the irreduciblePoly
-        // and the polynomial term that is higher than the degree in the field.
-        // This makes it so that pow and degree are equivalent, allowing us to 
-        // perform the operation we did eaerlier. 
-        else if (pow > degree)
-        {
-            uint8_t tmpRes = 0; 
-            uint8_t powPoly = (1 << pow);
-            modMult(&tmpRes, &irreduciblePoly, &powPoly);
-            result ^= ((1 << pow) ^ irreduciblePoly);
+            bool bit = remainder[i] & bitMask;
+            
+            if (bit)
+            {
+                remainder[i-R_SIZE] = remainder[i-R_SIZE] ^ bitMask;
+            }
 
+            remainder[i] = remainder[i] & (~bitMask);
+            bitMask = bitMask << 1;
         }
-        pow++;
     }
-    *poly = result;
-    #endif
-    
+
+    memcpy(dst, remainder, R_SIZE);
 }
