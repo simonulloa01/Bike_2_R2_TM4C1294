@@ -12,19 +12,23 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
     if ((a != NULL) && (b != NULL))
     {
         uint8_t product[size * 2];
+        memset(product, 0, size * 2); // zero out product
         for (uint32_t byteIndex = 0; byteIndex < size; byteIndex++)
         {
-            uint16_t productPart = 0x0000;
             for (uint32_t bitIndex = 0; bitIndex < 8; bitIndex++)
             {
                 bool bit = a[byteIndex] & (0x01 << bitIndex);
                 if (bit)
                 {
-                    productPart |= b[byteIndex] << bitIndex;
+                    for (uint32_t i = 0; i < size; i++)
+                    {
+                        uint16_t productPart = 0x0000;
+                        productPart |= b[i] << bitIndex;
+                        product[i + byteIndex] ^= (uint8_t)(productPart & 0x00FF);
+                        product[i + byteIndex + 1] ^= (uint8_t)(productPart >> 8);
+                    }
                 }
             }
-            product[byteIndex] |= (uint8_t)(productPart & 0x00FF);
-            product[byteIndex + 1] |= (uint8_t)(productPart >> 8);
         }
 
         polyMod(dst, product, size * 2);
@@ -55,17 +59,17 @@ void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size)
     uint8_t remainder[size];
     memcpy(remainder, a, size);
 
-    // loop down to the 
+    // loop down to the
     for (uint32_t i = size - 1; i >= R_SIZE; i--)
     {
         uint8_t bitMask = 0x01;
         while (remainder[i] != 0)
         {
             bool bit = remainder[i] & bitMask;
-            
+
             if (bit)
             {
-                remainder[i-R_SIZE] = remainder[i-R_SIZE] ^ bitMask;
+                remainder[i - R_SIZE] = remainder[i - R_SIZE] ^ bitMask;
             }
 
             remainder[i] = remainder[i] & (~bitMask);

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <math.h>
+#include <string.h>
 #include "defs.h"
 
 void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size);

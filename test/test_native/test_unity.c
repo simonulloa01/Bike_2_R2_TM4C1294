@@ -92,6 +92,79 @@ void test_decaps(void)
     TEST_ASSERT_EQUAL(1, 1);
 }
 
+void test_polyMod(void)
+{
+    // test an array that is smaller than the irreducible
+    uint8_t small[5] = {0};
+    small[0] = (uint8_t)rand();
+    small[2] = (uint8_t)rand();
+    small[4] = (uint8_t)rand();
+
+    uint8_t result1[R_SIZE];
+    polyMod(result1, small, R_SIZE + 10);
+
+    TEST_ASSERT_EQUAL(small[0], result1[0]);
+    TEST_ASSERT_EQUAL(small[2], result1[2]);
+    TEST_ASSERT_EQUAL(small[4], result1[4]);
+
+    // test a polynomial that does not need to be reduced
+    uint8_t unreduced[R_SIZE + 10] = {0};
+    unreduced[0] = (uint8_t)rand();
+    unreduced[2] = (uint8_t)rand();
+    unreduced[4] = (uint8_t)rand();
+
+    uint8_t result2[R_SIZE];
+    polyMod(result2, unreduced, R_SIZE + 10);
+
+    TEST_ASSERT_EQUAL(unreduced[0], result2[0]);
+    TEST_ASSERT_EQUAL(unreduced[2], result2[2]);
+    TEST_ASSERT_EQUAL(unreduced[4], result2[4]);
+
+    // test a polynomial that should be reduced
+    // todo
+}
+
+void test_modMult(void)
+{
+    // multiply by 0 = 0
+    uint8_t a[R_SIZE] = {0};
+    uint8_t zero[R_SIZE] = {0};
+    uint8_t result1[R_SIZE] = {0};
+    generate_sparse_polynomial(a, R_SIZE, 128, R_BITS);
+
+    modMult(result1, a, zero, R_SIZE);
+
+    for (uint32_t i = 0; i < R_SIZE; i++)
+    {
+        TEST_ASSERT_EQUAL(zero[i], result1[i]);
+    }
+
+    // multiply by 1 = self
+    uint8_t one[R_SIZE] = {0};
+    one[0] = 1;
+    uint8_t result2[R_SIZE] = {0};
+
+    modMult(result2, a, one, R_SIZE);
+
+    for (uint32_t i = 0; i < R_SIZE; i++)
+    {
+        TEST_ASSERT_EQUAL(a[i], result2[i]);
+    }
+
+    // multiply by inv = 1
+    uint8_t inv[R_SIZE] = {0};
+    uint8_t result3[R_SIZE] = {0};
+
+    modInv(inv, a, R_SIZE);
+
+    modMult(result3, a, inv, R_SIZE);
+
+    for (uint32_t i = 0; i < R_SIZE; i++)
+    {
+        TEST_ASSERT_EQUAL(one[i], result3[i]);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -100,5 +173,7 @@ int main(void)
     RUN_TEST(test_key_gen);
     RUN_TEST(test_encap);
     RUN_TEST(test_decaps);
+    RUN_TEST(test_polyMod);
+    RUN_TEST(test_modMult);
     return UNITY_END();
 }
