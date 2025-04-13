@@ -8,6 +8,7 @@ typedef struct
 {
     // the block size in bytes (r)
     int block_size;
+    int block_size_bits;
     // the row weight(w)
     int row_weight;
     // the target error weight(t)
@@ -37,6 +38,7 @@ typedef struct
  */
 static const bike2_params_t bike2_params_level_1 = {
     .block_size = R_SIZE, 
+    .block_size_bits = R_BITS,
     .row_weight = W,
     .target_error = T,
     .code_length = N_BITS
