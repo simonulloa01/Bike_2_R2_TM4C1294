@@ -11,8 +11,14 @@ add a b = a + b
    For testing purposes we simplified this to an 8-bit number.
    We can change this to a larger bit if saw allows us to.  
  */
-modAdd : [8] -> [8] -> [8]
-modAdd x y = x ^ y
+modAdd : ([32], [32]) -> [32]
+modAdd (a, b) = dst
+  where 
+    dst = a ^ b 
+// modAdd a b = a ^ 
+
+// moddAdd_return : [8] [8] -> [8]
+
 
 
 

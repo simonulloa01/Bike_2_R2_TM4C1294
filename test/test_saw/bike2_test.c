@@ -2,55 +2,31 @@
 #include <stdint.h>
 // #include "../../src/bike2.h"
 
-// Constants
-#define BITS_IN_BYTE 8
 
 // Functions to test
-int addNums(int a, int b);
-void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b);
+uint32_t modAdd(const uint32_t *a, const uint32_t *b);
 
 // void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed);
 // void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t *seed);
 // bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t *seed);
-// int hammingWeight(const uint8_t poly[], int length);
 
 
 int main ()
 {
     // Testing the modAdd function
-    const uint8_t bin1 = 0b00010110;
-    const uint8_t bin2 = 0b00100011;
-    uint8_t sum = 0;
-    modAdd(&sum, &bin1, &bin2);
+    const uint32_t bin1 = 0b00010110;
+    const uint32_t bin2 = 0b00100011;
+    uint32_t sum = 0;
+    sum = modAdd(&bin1, &bin2);
     printf("Testing modAdd: The two values (%#x, %#x) --> %#x\n", bin1, bin2, sum);
     return 0;
 }
 
-// Test function
-int addNums(int a, int b)
-{
-    return a + b;
-}
-
 // Bike Specific Functions
-
 // Polynomial Modular Arithemetic Functions
-void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
+uint32_t modAdd(const uint32_t *a, const uint32_t *b)
 {
-    
-    // Do not perform arithmetic on polynomial's a and b if they are NULL. 
-    if ((a != NULL) && (b != NULL))
-    {
-        // Adding the two binary polynomials is the equivalent of the XOR
-        // operation. One of the reasons for this is because the inverse of
-        // number is itself. For example, 1 plus 1 is 0, since the number 
-        // 1 has an inverse of 1.  
-        for (uint32_t i = 0; i < sizeof(dst); i++)
-        {
-            dst[i] = a[i] ^ b[i];
-        }
-    }
-    
+    return *a ^ *b;
 }
 
 // void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
@@ -119,20 +95,4 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 //     hamWeight = hammingWeight(e, N_SIZE);
 
 //     return retVal;
-// }
-
-// int hammingWeight(const uint8_t poly[], int length)
-// {
-//     int weight = 0; 
-//     for (int i = 0; i < length; i++)
-//     {
-//         for (int j = 0; j < BITS_IN_BYTE; j++)
-//         {
-//             if ((poly[i] >> j) & 1)
-//             {
-//                 weight++;
-//             }
-//         }
-//     }
-//     return weight;
 // }

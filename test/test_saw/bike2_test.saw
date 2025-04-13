@@ -1,38 +1,29 @@
-include "llvm.saw";
+// include "llvm.saw";
+include "helpers.saw";
+
 
 import "bike2_test.cry";
 
 // Prior to running the verification be sure to have all the valid files. 
 // These include the .bc/.saw/.c/.cry
 
-print "Loading the bike2_test bit code";
+print "Loading the bike2_test module";
 bike2_test_bc <- llvm_load_module "bike2_test.bc";
 
-print "Extracting C reference term: addNums";
-addNums <- llvm_extract bike2_test_bc "addNums";
-
-print "Proving equivalence (C == Cryptol): addNums == add";
-let thm1 = {{ \x -> \y -> addNums x y == add x y}};
-result <- prove z3 thm1;
-print result;
-
-// Specify the binary polynomial modular addition function. 
-print "Creating specification of C function: modAdd";
 let modAdd_spec = do {
+  // Create symbolic integers and pointers to them.
+  (a, ap) <- ptr_to_fresh "a" (llvm_int 32);
+  (b, bp) <- ptr_to_fresh "b" (llvm_int 32);
 
-    // Allocate memory for each ptr parameter. FRESH is used for symbolic verification. 
-    dst <- alloc WRITE i8 "dst" FRESH;
-    a <- alloc CONST i8 "a" FRESH;
-    b <- alloc CONST i8 "b" FRESH;
-    
-    // Execute the function.
-    execute [dst.p, a.p, b.p];
+  // Execute the function with the pointer parameters.
+  llvm_execute_func [ap, bp];
 
-    let (dst_t, a_t, b_t) = (dst.t, a.t, b.t);
-    points_to dst.p (from_cryptol {{modAdd a_t b_t}});
-
+  // Use Cryptol to specify the desired return value.
+  let modAdd_res = {{ modAdd (a, b) }};
+  llvm_return (llvm_term {{ modAdd_res }});
 };
 
-modAdd_result <- llvm_verify bike2_test_bc "modAdd" [] modAdd_spec;
+// Verify C function modAdd using modAdd_spec.
+llvm_verify bike2_test_bc "modAdd" [] true modAdd_spec yices;
 
 print "Done.";
