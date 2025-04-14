@@ -1,6 +1,5 @@
-#if FALSE
 #include "bike2.h"
-
+#if 0
 void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
 {
     uint8_t h0[R_SIZE];
@@ -26,7 +25,7 @@ void keygen(uint8_t *pk, uint8_t *sk, const uint8_t *seed)
 
 void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t *seed)
 {
-    #if 0 
+    
     uint8_t e[N_SIZE];
     aes_ctr_prf_state rngState = {0};
 
@@ -49,13 +48,13 @@ void encrypt(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const uint8_t *seed)
 
     // get shared secret
     // todo
-    #endif
+    
 
 }
 
 bool decrypt(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const uint8_t *seed)
 {
-    #if 0
+    
     bool retVal = false;
     uint8_t e[N_SIZE];
     int hamWeight = 0;
@@ -86,8 +85,7 @@ int hammingWeight(const uint8_t poly[], int length)
         }
     }
     return weight;
-    #endif
+    
     return false;
 }
-
-#endif
+#endif //BUILD_ENVIRONMENT_NATIVE

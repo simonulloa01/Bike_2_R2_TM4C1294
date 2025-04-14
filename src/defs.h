@@ -4,7 +4,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BITS_IN_BYTE 8 
+typedef struct
+{
+    // the block size in bytes (r)
+    int block_size;
+    int block_size_bits;
+    // the row weight(w)
+    int row_weight;
+    // the target error weight(t)
+    int target_error;
+    // the length of the code ussual block_size(r) * 2
+    int code_length;
+} bike2_params_t;
+
+#define BITS_IN_BYTE 8
 
 // Note these definitions are for BIKE 2 CPA with security level 1
 #define R_BITS 10163
@@ -20,5 +33,15 @@
 #define AES256_KEY_SIZE 32
 #define AES256_KEY_BITS (AES256_KEY_SIZE * 8)
 #define AES256_BLOCK_SIZE 16
+/**
+ * @brief holds the parameters for BIKE-2 CPA with security level 1
+ */
+static const bike2_params_t bike2_params_level_1 = {
+    .block_size = R_SIZE, 
+    .block_size_bits = R_BITS,
+    .row_weight = W,
+    .target_error = T,
+    .code_length = N_BITS
+};
 
 #endif
