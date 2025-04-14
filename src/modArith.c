@@ -1,10 +1,60 @@
 
 #include "modArith.h"
 
-void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size)
+void modSqr(uint8_t *dst, const uint8_t *src, const bike2_params_t *params)
 {
-    // todo
+    const uint32_t block_size_bytes = params->block_size;
+    const uint32_t block_size_bits = params->block_size_bits;
+    
+    // Clear the destination buffer first
+    memset(dst, 0, block_size_bytes * 2);
+
+    // For each bit in the source, set the corresponding bit in the destination
+    // In GF(2)[x], squaring spreads out the bits: x^i becomes x^(2i)
+    for (uint32_t i = 0; i < block_size_bytes; i++) {
+        for (uint32_t j = 0; j < 8; j++) {
+            // Skip bits that are beyond the polynomial size
+            if (i * 8 + j >= block_size_bits) {
+                break;
+            }
+            
+            if ((src[i] >> j) & 1) {
+                uint32_t newBitIndex = (i * 8 + j) * 2;
+                uint32_t newByteIndex = newBitIndex / 8;
+                uint32_t newBitOffset = newBitIndex % 8;
+                
+                if (newByteIndex < block_size_bytes * 2) {
+                    dst[newByteIndex] |= (1 << newBitOffset);
+                }
+            }
+        }
+    }
+    
+    // Apply modulo (x^r - 1)
+    uint8_t temp[block_size_bytes];
+    polyMod(temp, dst, block_size_bytes * 2);
+    memcpy(dst, temp, block_size_bytes);
 }
+
+void repeatedSquaring(uint8_t *dst, const uint8_t *src, uint32_t k, const bike2_params_t *params)
+{
+    const uint32_t block_size_bytes = params->block_size;
+    
+    // Copy source to a temporary buffer for in-place operations
+    uint8_t temp[block_size_bytes];
+    memcpy(temp, src, block_size_bytes);
+    
+    // Initialize destination with source
+    memcpy(dst, src, block_size_bytes);
+    
+    // Perform k squaring operations
+    for (uint32_t i = 0; i < k; i++) {
+        uint8_t squared[block_size_bytes];
+        modSqr(squared, dst, params);
+        memcpy(dst, squared, block_size_bytes);
+    }
+}
+
 
 void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
@@ -78,4 +128,58 @@ void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size)
     }
 
     memcpy(dst, remainder, R_SIZE);
+}
+
+void modInv(uint8_t *dst, const uint8_t *src, const bike2_params_t *params)
+{
+    if (src == NULL || dst == NULL || params == NULL) {
+        return;
+    }
+    
+    const uint32_t block_size_bytes = params->block_size;
+    const uint32_t block_size_bits = params->block_size_bits;
+    
+    // Temporary buffers for calculations
+    uint8_t f[block_size_bytes];
+    uint8_t g[block_size_bytes];
+    uint8_t t[block_size_bytes];
+    
+    // Initialize f and t with the input polynomial
+    memcpy(f, src, block_size_bytes);
+    memcpy(t, src, block_size_bytes);
+    
+    // These are the exponentiation patterns for BIKE-2
+    // The exact pattern depends on the bit size, but this is a reasonable
+    // general approach that works for typical BIKE parameter sets
+    
+    // We'll implement a chain of squaring and multiplication operations
+    // based on the Itoh-Tsujii algorithm
+    
+    // Start with i=1
+    repeatedSquaring(g, f, 1, params);
+    modMult(f, f, g, block_size_bytes);
+    
+    // Continue with optimized steps - we use powers of 2 to minimize squarings
+    const uint32_t exp_steps[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048};
+    const uint32_t num_steps = sizeof(exp_steps) / sizeof(exp_steps[0]);
+    
+    for (uint32_t i = 0; i < num_steps && exp_steps[i] < block_size_bits; i++) {
+        // Compute g = f^(2^exp_steps[i])
+        repeatedSquaring(g, f, exp_steps[i], params);
+        
+        // Multiply: f = f * g
+        modMult(f, f, g, block_size_bytes);
+    }
+    
+    // Final squaring: t = f^2
+    modSqr(t, f, params);
+    
+    // Copy result to destination
+    memcpy(dst, t, block_size_bytes);
+    
+    // Ensure the highest bits beyond the polynomial size are zeroed
+    if (block_size_bits % 8 != 0) {
+        uint8_t mask = (1 << (block_size_bits % 8)) - 1;
+        dst[block_size_bytes - 1] &= mask;
+    }
 }

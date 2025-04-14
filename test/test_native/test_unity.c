@@ -155,7 +155,7 @@ void test_modMult(void)
     uint8_t inv[R_SIZE] = {0};
     uint8_t result3[R_SIZE] = {0};
 
-    modInv(inv, a, R_SIZE);
+    modInv(inv, a, &bike2_params_level_1);
 
     modMult(result3, a, inv, R_SIZE);
 

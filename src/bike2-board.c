@@ -11,7 +11,7 @@ void keygen_board(uint8_t *pk, uint8_t *sk, const bike2_params_t *params)
 
     // invert h0 to get h0_inv
     uint8_t h0_inv[params->block_size];
-    modInv(h0, h0_inv, params->block_size);
+    modInv(h0_inv, h0, params);
 
     // h = h1 * h0_inv
     uint8_t h[params->block_size];

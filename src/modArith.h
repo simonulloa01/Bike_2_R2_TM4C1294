@@ -6,7 +6,7 @@
 #include <string.h>
 #include "defs.h"
 
-void modInv(uint8_t *dst, const uint8_t *src, const uint32_t size);
+void modInv(uint8_t *dst, const uint8_t *src, const bike2_params_t *params);
 
 void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size);
 
