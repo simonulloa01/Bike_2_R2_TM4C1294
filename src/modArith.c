@@ -1,88 +1,46 @@
 
 #include "modArith.h"
 
-void modSqr(uint8_t *dst, const uint8_t *src, const bike2_params_t *params)
+void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size, const bike2_params_t *params)
 {
-    const uint32_t block_size_bytes = params->block_size;
-    const uint32_t block_size_bits = params->block_size_bits;
-    
-    // Clear the destination buffer first
-    memset(dst, 0, block_size_bytes * 2);
+    uint32_t product_bits = 2 * size;
+    uint32_t product_bytes = (product_bits + 7u) / 8u;
 
-    // For each bit in the source, set the corresponding bit in the destination
-    // In GF(2)[x], squaring spreads out the bits: x^i becomes x^(2i)
-    for (uint32_t i = 0; i < block_size_bytes; i++) {
-        for (uint32_t j = 0; j < 8; j++) {
-            // Skip bits that are beyond the polynomial size
-            if (i * 8 + j >= block_size_bits) {
-                break;
-            }
-            
-            if ((src[i] >> j) & 1) {
-                uint32_t newBitIndex = (i * 8 + j) * 2;
-                uint32_t newByteIndex = newBitIndex / 8;
-                uint32_t newBitOffset = newBitIndex % 8;
-                
-                if (newByteIndex < block_size_bytes * 2) {
-                    dst[newByteIndex] |= (1 << newBitOffset);
-                }
-            }
-        }
-    }
     
-    // Apply modulo (x^r - 1)
-    uint8_t temp[block_size_bytes];
-    polyMod(temp, dst, block_size_bytes * 2);
-    memcpy(dst, temp, block_size_bytes);
-}
+    uint8_t product[product_bytes];
+    memset(product, 0, product_bytes);
 
-void repeatedSquaring(uint8_t *dst, const uint8_t *src, uint32_t k, const bike2_params_t *params)
-{
-    const uint32_t block_size_bytes = params->block_size;
-    
-    // Copy source to a temporary buffer for in-place operations
-    uint8_t temp[block_size_bytes];
-    memcpy(temp, src, block_size_bytes);
-    
-    // Initialize destination with source
-    memcpy(dst, src, block_size_bytes);
-    
-    // Perform k squaring operations
-    for (uint32_t i = 0; i < k; i++) {
-        uint8_t squared[block_size_bytes];
-        modSqr(squared, dst, params);
-        memcpy(dst, squared, block_size_bytes);
-    }
-}
-
-
-void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
-{
-    // Do not perform arithmetic on polynomial's a and b if they are NULL.
-    if ((a != NULL) && (b != NULL))
+    //foreach bit
+    for (uint32_t i = 0; i < size; i++)
     {
-        uint8_t product[size * 2];
-        memset(product, 0, size * 2); // zero out product
-        for (uint32_t byteIndex = 0; byteIndex < size; byteIndex++)
+        //check if bit i in 'a' is set 
+        uint32_t a_byte = i / 8;
+        uint32_t a_bit = i % 8;
+        bool a_is_set = (a[a_byte] & (1u << a_bit)) != 0;
+
+        if (a_is_set)
         {
-            for (uint32_t bitIndex = 0; bitIndex < 8; bitIndex++)
+            // For each bit j of b(x):
+            for (uint32_t j = 0; j < size; j++)
             {
-                bool bit = a[byteIndex] & (0x01 << bitIndex);
-                if (bit)
+                //check if bit j in 'b' is set
+                uint32_t b_byte = j / 8;
+                uint32_t b_bit = j % 8;
+                bool b_is_set = (b[b_byte] & (1u << b_bit)) != 0;
+
+                if (b_is_set)
                 {
-                    for (uint32_t i = 0; i < size; i++)
-                    {
-                        uint16_t productPart = 0x0000;
-                        productPart |= b[i] << bitIndex;
-                        product[i + byteIndex] ^= (uint8_t)(productPart & 0x00FF);
-                        product[i + byteIndex + 1] ^= (uint8_t)(productPart >> 8);
-                    }
+                    uint32_t sum = i + j; // exponent
+                    uint32_t sum_byte = sum / 8;
+                    uint32_t sum_bit = sum % 8;
+                    product[sum_byte] ^= (uint8_t)(1u << sum_bit);
                 }
             }
         }
-
-        polyMod(dst, product, size * 2);
     }
+
+    //reduce
+    polyMod(dst, product, product_bits, params);
 }
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
@@ -102,84 +60,55 @@ void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t siz
     }
 }
 
-// Note: dst is expected to be an array of length R_SIZE
-void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size)
+// size of the polynomial in bits
+void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size, const bike2_params_t *params)
 {
-    // copy over the operand and it will be worked down to the remainder
-    uint8_t remainder[size];
-    memcpy(remainder, a, size);
+    // r = exponent for x^r -1
+    const uint32_t r = params->block_size_bits;
+    
+    const uint32_t a_bytes = (size + 7u) / 8u;
+    const uint32_t r_bytes = (r + 7u) / 8u;
 
-    // loop down to the
-    for (uint32_t i = size - 1; i >= R_SIZE; i--)
+    // Local copy so we can modify bits in place
+    uint8_t remainder[a_bytes];
+    memset(remainder, 0, a_bytes);
+    memcpy(remainder, a, a_bytes);
+
+    //For each set bit i >= r, fold it to (i - r) from highest bit
+    for (int i = (int)size - 1; i >= (int)r; i--)
     {
-        uint8_t bitMask = 0x01;
-        while (remainder[i] != 0)
+        uint32_t bytePos = (uint32_t)i / 8u;
+        uint32_t bitPos = (uint32_t)i % 8u;
+        uint8_t mask = (uint8_t)(1u << bitPos);
+
+        //check if set
+        if (remainder[bytePos] & mask)
         {
-            bool bit = remainder[i] & bitMask;
+            // clear bit i
+            remainder[bytePos] &= (uint8_t)(~mask);
 
-            if (bit)
-            {
-                remainder[i - R_SIZE] = remainder[i - R_SIZE] ^ bitMask;
-            }
+            // toggle bit (i - r)
+            int j = i - (int)r;                // new exponent
+            uint32_t jb = (uint32_t)j / 8u;    // which byte
+            uint32_t jbpos = (uint32_t)j % 8u; // which bit in that byte
+            uint8_t jmask = (uint8_t)(1u << jbpos);
 
-            remainder[i] = remainder[i] & (~bitMask);
-            bitMask = bitMask << 1;
+            remainder[jb] ^= jmask;
         }
     }
 
-    memcpy(dst, remainder, R_SIZE);
-}
 
+    memset(dst, 0, r_bytes);
+    const uint32_t toCopy = (a_bytes < r_bytes) ? a_bytes : r_bytes;
+    memcpy(dst, remainder, toCopy);
+
+    // if r is not a multiple of 8 mask off the top bits in the last byte
+    if (r % 8u != 0u)
+    {
+        uint8_t topMask = (uint8_t)((1u << (r % 8u)) - 1u);
+        dst[r_bytes - 1] &= topMask;
+    }
+}
 void modInv(uint8_t *dst, const uint8_t *src, const bike2_params_t *params)
 {
-    if (src == NULL || dst == NULL || params == NULL) {
-        return;
-    }
-    
-    const uint32_t block_size_bytes = params->block_size;
-    const uint32_t block_size_bits = params->block_size_bits;
-    
-    // Temporary buffers for calculations
-    uint8_t f[block_size_bytes];
-    uint8_t g[block_size_bytes];
-    uint8_t t[block_size_bytes];
-    
-    // Initialize f and t with the input polynomial
-    memcpy(f, src, block_size_bytes);
-    memcpy(t, src, block_size_bytes);
-    
-    // These are the exponentiation patterns for BIKE-2
-    // The exact pattern depends on the bit size, but this is a reasonable
-    // general approach that works for typical BIKE parameter sets
-    
-    // We'll implement a chain of squaring and multiplication operations
-    // based on the Itoh-Tsujii algorithm
-    
-    // Start with i=1
-    repeatedSquaring(g, f, 1, params);
-    modMult(f, f, g, block_size_bytes);
-    
-    // Continue with optimized steps - we use powers of 2 to minimize squarings
-    const uint32_t exp_steps[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048};
-    const uint32_t num_steps = sizeof(exp_steps) / sizeof(exp_steps[0]);
-    
-    for (uint32_t i = 0; i < num_steps && exp_steps[i] < block_size_bits; i++) {
-        // Compute g = f^(2^exp_steps[i])
-        repeatedSquaring(g, f, exp_steps[i], params);
-        
-        // Multiply: f = f * g
-        modMult(f, f, g, block_size_bytes);
-    }
-    
-    // Final squaring: t = f^2
-    modSqr(t, f, params);
-    
-    // Copy result to destination
-    memcpy(dst, t, block_size_bytes);
-    
-    // Ensure the highest bits beyond the polynomial size are zeroed
-    if (block_size_bits % 8 != 0) {
-        uint8_t mask = (1 << (block_size_bits % 8)) - 1;
-        dst[block_size_bytes - 1] &= mask;
-    }
 }
