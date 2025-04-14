@@ -1,7 +1,4 @@
-// include "llvm.saw";
 include "helpers.saw";
-
-
 import "bike2_test.cry";
 
 // Prior to running the verification be sure to have all the valid files. 
@@ -25,5 +22,23 @@ let modAdd_spec = do {
 
 // Verify C function modAdd using modAdd_spec.
 llvm_verify bike2_test_bc "modAdd" [] true modAdd_spec yices;
+
+// Meant to test both our multiplication and modular poly arithemetic.
+let modMult_spec = do {
+  // Create symbolic integers and pointers to them.
+  (x, xp) <- ptr_to_fresh "x" (llvm_int 8);
+  (y, yp) <- ptr_to_fresh "y" (llvm_int 8);
+
+  // Execute the function with the established parameters.
+  llvm_execute_func [xp,yp];
+
+  // Use Cryptol to specify the desired return value.
+  let modMult_res = {{ modMult (x,y) }};
+  llvm_return (llvm_term {{ modMult_res }});
+};
+
+// Verify C function modAdd using modMult_spec.
+llvm_verify bike2_test_bc "modMult" [] true modMult_spec yices;
+
 
 print "Done.";
