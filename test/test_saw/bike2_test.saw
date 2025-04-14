@@ -1,23 +1,44 @@
+include "helpers.saw";
+import "bike2_test.cry";
+
 // Prior to running the verification be sure to have all the valid files. 
 // These include the .bc/.saw/.c/.cry
-print "Loading the bike2_test bit code";
-l <- llvm_load_module "bike2_test.bc";
 
-print "Extracting reference term: addNums";
-addNums <- crucible_llvm_extract l "addNums";
+print "Loading the bike2_test module";
+bike2_test_bc <- llvm_load_module "bike2_test.bc";
 
-print "Assigning Cryptol implementation: add";
-let {{
-    add : ([32] -> [32] -> [32])
-    add a b = a + b
-}};
+let modAdd_spec = do {
+  // Create symbolic integers and pointers to them.
+  (a, ap) <- ptr_to_fresh "a" (llvm_int 32);
+  (b, bp) <- ptr_to_fresh "b" (llvm_int 32);
 
-// Let each theorem be a proof that each implementation is 
-// equivalent to one another. 
+  // Execute the function with the pointer parameters.
+  llvm_execute_func [ap, bp];
 
-print "Proving equivalence: addNums == add";
-let thm1 = {{ \x -> \y -> addNums x y == add x y}};
-result <- prove z3 thm1;
-print result;
+  // Use Cryptol to specify the desired return value.
+  let modAdd_res = {{ modAdd (a, b) }};
+  llvm_return (llvm_term {{ modAdd_res }});
+};
+
+// Verify C function modAdd using modAdd_spec.
+llvm_verify bike2_test_bc "modAdd" [] true modAdd_spec yices;
+
+// Meant to test both our multiplication and modular poly arithemetic.
+let modMult_spec = do {
+  // Create symbolic integers and pointers to them.
+  (x, xp) <- ptr_to_fresh "x" (llvm_int 8);
+  (y, yp) <- ptr_to_fresh "y" (llvm_int 8);
+
+  // Execute the function with the established parameters.
+  llvm_execute_func [xp,yp];
+
+  // Use Cryptol to specify the desired return value.
+  let modMult_res = {{ modMult (x,y) }};
+  llvm_return (llvm_term {{ modMult_res }});
+};
+
+// Verify C function modAdd using modMult_spec.
+llvm_verify bike2_test_bc "modMult" [] true modMult_spec yices;
+
 
 print "Done.";

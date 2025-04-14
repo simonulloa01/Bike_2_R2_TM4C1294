@@ -1,4 +1,19 @@
 
-// Functions to Test 
-add : ([32] -> [32] -> [32])
-add a b = a + b
+/**
+ * The original function added two elements in GF(2^10163).
+   For testing purposes we simplified this to an 8-bit number.
+   We can change this to a larger bit if saw allows us to.  
+ */
+modAdd : ([32], [32]) -> [32]
+modAdd (a, b) = dst
+  where 
+    dst = a ^ b 
+
+
+// original funtion -- incorporates the modulo over the irreducible x^10163 + 1
+// This is very difficult to test so instead we use the provided pmult to see if 
+// our implementation of modMult in C is accurate.  
+modMult : ([8], [8]) -> [8]
+modMult (x, y) = prod
+  where 
+    prod = pmod (pmult x y) 256
