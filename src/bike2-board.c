@@ -56,13 +56,22 @@ void encap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params
 }
 /**
  * Decrypts the ciphertext using the secret key and returns the shared secret
- * @param sk the sparse private key (h0, h1)
+ * @param pk the sparse private key (h0, h1)
  * @param ct the ciphertext
  * @param ss OUT the encapsulation key (K)
  * @param params the parameters for the algorithm
  */
 void decap_board(const uint8_t *pk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params)
 {
+    uint8_t syndrome[params->block_size];
+    uint8_t h0[params->block_size];
+    uint8_t h1[params->block_size];
+    //get the h0 and h1 from the sk
+    memcpy(h0, pk, params->block_size);
+    memcpy(h1, pk + params->block_size, params->block_size);
+    
+    //compute the syndrome
+    polyMult(syndrome, ct, pk, params->block_size, params);
     
 }
 /**
