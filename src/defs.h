@@ -13,7 +13,7 @@ typedef struct
     int row_weight;
     // the target error weight(t)
     int target_error;
-    // the length of the code ussual block_size(r) * 2
+    // the size of the shared secret
     int code_length;
 } bike2_params_t;
 
@@ -37,11 +37,10 @@ typedef struct
  * @brief holds the parameters for BIKE-2 CPA with security level 1
  */
 static const bike2_params_t bike2_params_level_1 = {
-    .block_size = R_SIZE, 
+    .block_size = R_SIZE,
     .block_size_bits = R_BITS,
     .row_weight = W,
     .target_error = T,
-    .code_length = N_BITS
-};
+    .code_length = 256};
 
 #endif

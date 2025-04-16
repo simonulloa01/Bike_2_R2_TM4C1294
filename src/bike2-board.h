@@ -7,8 +7,8 @@
 
 void keygen_board(uint8_t *pk, uint8_t *sk, const bike2_params_t *params);
 
-void encrypt_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params_t *params);
+void ecap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params_t *params);
 
-void decrypt_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params);
+void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params);
 
 #endif

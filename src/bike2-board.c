@@ -27,10 +27,48 @@ void keygen_board(uint8_t *pk, uint8_t *sk, const bike2_params_t *params)
     memcpy(sk + params->block_size, h1, params->block_size);
     return;
 }
-void encrypt_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params_t *params)
+/**
+ * Encrypts the message using the public key and returns the ciphertext
+ * @param pk the public key
+ * @param ct OUT the ciphertext
+ * @param ss OUT the encapsulation key (K)
+ * @param params the parameters for the algorithm
+ */
+void encap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params_t *params)
 {
-}
+    uint8_t e0[params->block_size];
+    uint8_t e1[params->block_size];
+    uint8_t c[params->block_size*2];
+    uint8_t ss[params->code_length];
+    //gen 2 sparse polynomials e0 and e1 with hamming weight t
+    generate_sparse_polynomial(e0, params->block_size, params->target_error / 2, params->code_length/2);
+    generate_sparse_polynomial(e1, params->block_size, params->target_error / 2, params->code_length/2);
+    // c = e0 + e1 * pk
+    uint8_t e1_pk[params->block_size];
+    modMult(e1_pk, e1, pk, params->block_size, params);
+    modAdd(c, e0, e1_pk, params->block_size);
+    // K = Hash(c)
+    hash(c, ss, params);
+    
 
-void decrypt_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params)
+
+
+}
+/**
+ * Decrypts the ciphertext using the secret key and returns the shared secret
+ * @param sk the sparse private key (h0, h1)
+ * @param ct the ciphertext
+ * @param ss OUT the encapsulation key (K)
+ * @param params the parameters for the algorithm
+ */
+void decap_board(const uint8_t *pk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params)
 {
+    
+}
+/**
+ * Placeholder for the hash function
+ */
+void hash(const uint8_t *input, uint8_t *output, const bike2_params_t *params)
+{
+    memccpy(output, input, 0, params->code_length/8);
 }
