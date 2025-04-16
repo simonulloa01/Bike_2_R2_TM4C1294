@@ -1,10 +1,10 @@
 
-/**
- * The original function added two elements in GF(2^10163).
-   For testing purposes we simplified this to an 8-bit number.
-   We can change this to a larger bit if saw allows us to.  
- */
-modAdd : ([32], [32]) -> [32]
+
+// The original function added two elements in GF(2^10163).
+// For testing purposes we simplified this to an 8-bit number.
+// We can change this to a larger bit if saw allows us to.  
+ 
+modAdd : ([8], [8]) -> [8]
 modAdd (a, b) = dst
   where 
     dst = a ^ b 
@@ -17,3 +17,23 @@ modMult : ([8], [8]) -> [8]
 modMult (x, y) = prod
   where 
     prod = pmod (pmult x y) 256
+
+// KeyGen Function: 
+// - Input: (h0, h1) this is generated in runKat.c utilizing the pseudo-random number generator.
+// - Output: (pk, sk) which are the dense public key and sparse private key respectively. 
+// In the original function we worked with 
+keyGen : ([8], [8]) -> [32]
+keyGen (h0, h1) = keyGen_ret
+    where
+        // the inverse still needs to be implemented and tested...
+        // as a placeholder we will say that the inverse is 1.
+        // h0_inv = inverse h0
+        h0_inv : [8]
+        prefix : [8]
+        pk_prod : [8]
+        h0_inv = 1
+        prefix = 64 // 0b01000000 -- Original value was much larger.
+        pk_prod = modMult(h1, h0_inv)
+        pk = prefix # pk_prod
+        sk = h0 # h1 
+        keyGen_ret = pk # sk
