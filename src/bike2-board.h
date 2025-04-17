@@ -11,4 +11,6 @@ void ecap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params_
 
 void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_params_t *params);
 
+void hash(const uint8_t *input, uint8_t *output, const bike2_params_t *params);
+
 #endif

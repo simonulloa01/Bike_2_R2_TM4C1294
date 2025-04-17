@@ -6,8 +6,8 @@ void keygen_board(uint8_t *pk, uint8_t *sk, const bike2_params_t *params)
     // generate 2 sparse polynomials h0 and h1
     uint8_t h0[params->block_size];
     uint8_t h1[params->block_size];
-    generate_sparse_polynomial(h0, params->block_size, params->row_weight / 2, params->code_length/2);
-    generate_sparse_polynomial(h1, params->block_size, params->row_weight / 2, params->code_length/2);
+    generate_sparse_polynomial(h0, params->block_size, params->row_weight / 2, params->code_length / 2);
+    generate_sparse_polynomial(h1, params->block_size, params->row_weight / 2, params->code_length / 2);
 
     // invert h0 to get h0_inv
     uint8_t h0_inv[params->block_size];
@@ -38,21 +38,15 @@ void encap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params
 {
     uint8_t e0[params->block_size];
     uint8_t e1[params->block_size];
-    uint8_t c[params->block_size*2];
-    uint8_t ss[params->code_length];
-    //gen 2 sparse polynomials e0 and e1 with hamming weight t
-    generate_sparse_polynomial(e0, params->block_size, params->target_error / 2, params->code_length/2);
-    generate_sparse_polynomial(e1, params->block_size, params->target_error / 2, params->code_length/2);
+    // gen 2 sparse polynomials e0 and e1 with hamming weight t
+    generate_sparse_polynomial(e0, params->block_size, params->target_error / 2, params->code_length / 2);
+    generate_sparse_polynomial(e1, params->block_size, params->target_error / 2, params->code_length / 2);
     // c = e0 + e1 * pk
     uint8_t e1_pk[params->block_size];
     modMult(e1_pk, e1, pk, params->block_size, params);
-    modAdd(c, e0, e1_pk, params->block_size);
+    modAdd(ct, e0, e1_pk, params->block_size);
     // K = Hash(c)
-    hash(c, ss, params);
-    
-
-
-
+    hash(ct, ss, params);
 }
 /**
  * Decrypts the ciphertext using the secret key and returns the shared secret
@@ -66,18 +60,18 @@ void decap_board(const uint8_t *pk, const uint8_t *ct, uint8_t *ss, const bike2_
     uint8_t syndrome[params->block_size];
     uint8_t h0[params->block_size];
     uint8_t h1[params->block_size];
-    //get the h0 and h1 from the sk
+    // get the h0 and h1 from the sk
     memcpy(h0, pk, params->block_size);
     memcpy(h1, pk + params->block_size, params->block_size);
-    
-    //compute the syndrome
-    polyMult(syndrome, ct, pk, params->block_size, params);
-    
+
+    // compute the syndrome
+    modMult(syndrome, ct, pk, params->block_size, params);
 }
+
 /**
  * Placeholder for the hash function
  */
 void hash(const uint8_t *input, uint8_t *output, const bike2_params_t *params)
 {
-    memccpy(output, input, 0, params->code_length/8);
+    memcpy(output, input, params->code_length / 8);
 }
