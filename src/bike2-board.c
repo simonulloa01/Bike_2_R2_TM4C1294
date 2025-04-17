@@ -69,11 +69,13 @@ void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_
 
     // compute the syndrome
     modMult(syndrome, ct, sk, params->block_size, params);
+
+    decode(ss, syndrome, params);
 }
 
 /**
  * Simulates a 348 bit (48 byte) hash of the input
- * @param output the hash
+ * @param output OUT the hash
  * @param input the byte array to hash
  * @param length the length of the input
  */
@@ -83,4 +85,15 @@ void hash(uint8_t *output, const uint8_t *input, const uint32_t length)
     {
         output[i % 48] ^= input[i];
     }
+}
+
+/**
+ * A dummy function placeholding the decode step for decaps_board
+ * @param ss OUT the shared secret recovered from teh syndrome
+ * @param syndome the syndrome to decode
+ * @param params the parameters for the algorithm
+ */
+void decode(uint8_t *ss, const uint8_t *syndrome, const bike2_params_t *params)
+{
+    return;
 }

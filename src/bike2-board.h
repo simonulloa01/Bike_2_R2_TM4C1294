@@ -13,4 +13,6 @@ void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_
 
 void hash(uint8_t *output, const uint8_t *input, const uint32_t length);
 
+void decode(uint8_t *ss, const uint8_t *syndrome, const bike2_params_t *params);
+
 #endif
