@@ -41,12 +41,15 @@ void encap_board(const uint8_t *pk, uint8_t *ct, uint8_t *ss, const bike2_params
     // gen 2 sparse polynomials e0 and e1 with hamming weight t
     generate_sparse_polynomial(e0, params->block_size, params->target_error / 2, params->code_length / 2);
     generate_sparse_polynomial(e1, params->block_size, params->target_error / 2, params->code_length / 2);
-    // c = e0 + e1 * pk
+    // ct = e0 + e1 * pk
     uint8_t e1_pk[params->block_size];
     modMult(e1_pk, e1, pk, params->block_size, params);
     modAdd(ct, e0, e1_pk, params->block_size);
-    // K = Hash(c)
-    hash(ct, ss, params);
+    // K = Hash(e0 concat e1)
+    uint8_t e[params->block_size * 2];
+    memcpy(e, e0, params->block_size);
+    memcpy(e + params->block_size, e1, params->block_size);
+    hash(ss, e, params->block_size * 2);
 }
 /**
  * Decrypts the ciphertext using the secret key and returns the shared secret
@@ -69,9 +72,15 @@ void decap_board(const uint8_t *pk, const uint8_t *ct, uint8_t *ss, const bike2_
 }
 
 /**
- * Placeholder for the hash function
+ * Simulates a 348 bit (48 byte) hash of the input
+ * @param output the hash
+ * @param input the byte array to hash
+ * @param length the length of the input
  */
-void hash(const uint8_t *input, uint8_t *output, const bike2_params_t *params)
+void hash(uint8_t *output, const uint8_t *input, const uint32_t length)
 {
-    memcpy(output, input, params->code_length / 8);
+    for (uint32_t i = 0; i < length; i++)
+    {
+        output[i % 48] ^= input[i];
+    }
 }
