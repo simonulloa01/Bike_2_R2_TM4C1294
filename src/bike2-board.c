@@ -70,6 +70,7 @@ void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_
     // compute the syndrome
     modMult(syndrome, ct, sk, params->block_size, params);
 
+    // decode the syndrome (dummy function)
     decode(ss, syndrome, params);
 }
 
