@@ -3,6 +3,10 @@
 #include <stdbool.h> 
 #include <string.h>
 
+// #define TEST_SAW
+
+#ifdef TEST_SAW
+
 #define R_SIZE 1271
 
 // Functional Structs
@@ -152,3 +156,5 @@ UInt16Pair keyGen(uint8_t *h0, uint8_t *h1)
 
     return *ret;
 }
+
+#endif
