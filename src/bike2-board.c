@@ -96,5 +96,45 @@ void hash(uint8_t *output, const uint8_t *input, const uint32_t length)
  */
 void decode(uint8_t *ss, const uint8_t *syndrome, const bike2_params_t *params)
 {
+    //Decapsulate - (in) ct is a key encapsulation message (ciphertext),
+    //              (in) sk is the private key,
+    //              (out) ss is the shared secret
+
+    // Step 0 - Set up parameters: 
+    // Change all parameters to use an array of uint8_t (of 2 sets of 1271 bytes each) 
+    // Convert h0 and h1 to compact versions?
+
+    // Step 1 - Compute Syndrome 
+    // Compute syndrome -- array of 10163 bytes
+    // In BIKE2-CPA syndrome must become a zero-vector
+    // This function takes in ct, sk, and outputs the syndrome.
+    // BIKE-2 syndrome: s = c0*h0
+    // eg. modMult(s, sk->val0, ct->val0), where ->val0 is the first 1271 bytes of the value.
+    // why is this? 
+    // Convert syndrome 1271 bytes to bit-array of 1271 size. 
+    
+    // Step 3 - Transpose the syndrome
+    // transpose(col, row) // col represents final syndrome and row is the 10163 binary syndrome from prev step.
+    // Ex.
+    // row = {A, B, C, D, E}
+    // col[0] = row[0] = A
+    // col[1] = row[4] = E
+    // col[2] = row[3] = D
+    // col[3] = row[2] = C
+    // col[4] = row[1] = B
+
+    // Step 4 - Decode using decode_1sr_round from BIKE Reference 
+    // rc = decode_1st_round(e, syndrome.raw, h0_compact, h1_compact, u);
+
+    // Step 5 - Decode returns an int that indicates whether it was successful. 
+    // If it returns 0 then it was successful otherwise, decode portion failed.
+    // Convert array of bits to array of bytes
+    
+    // Step 6 - Check hamming weight, if it does not match the pre-defined value
+    // (134) then we can return early, otherwise continue to next step.
+
+    // Step 7 - Generate shared secret 
+    // res = get_ss_cpa(l_ss, eBytes);                CHECK_STATUS(res);
+
     return;
 }
