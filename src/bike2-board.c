@@ -78,23 +78,11 @@ void decap_board(const uint8_t *sk, const uint8_t *ct, uint8_t *ss, const bike2_
     
     // Step 1 - Compute Syndrome: 
     // In BIKE2-CPA syndrome must become a zero-vector
-    // BIKE-2 syndrome: s = c0*h0
-    uint8_t syndrome[params->block_size_bits]; // array of 10163 bytes
-    modMult(syndrome, h0, ct0, params->block_size, params);
-
-    // Convert syndrome 1271 bytes to bit-array of 1271 size. 
-    
-
-
-    // Step 3 - Transpose the syndrome
-    // transpose(col, row) // col represents final syndrome and row is the 10163 binary syndrome from prev step.
-    // Ex.
-    // row = {A, B, C, D, E}
-    // col[0] = row[0] = A
-    // col[1] = row[4] = E
-    // col[2] = row[3] = D
-    // col[3] = row[2] = C
-    // col[4] = row[1] = B
+    uint8_t syndrome[params->block_size_bits] = 0;
+    // pass in: 
+    // syndrome -> 10163 bytes empty
+    // ct  and sk
+    computeSyndrome(&syndrome, ct0, ct1, h0, h1, params);
 
     // decode the syndrome (dummy function)
     decode(ss, syndrome, params);
@@ -119,6 +107,47 @@ void hash(uint8_t *output, const uint8_t *input, const uint32_t length)
         output[i % 48] ^= input[i];
     }
 }
+
+void computeSyndrome(uint8_t *syndrome, uint8_t *ct0, uint8_t *ct1,
+                     uint8_t *h0, uint8_t *h1, const bike2_params_t *params)
+{
+    uint8_t syndrome[params->block_size] = 0; 
+    uint8_t syndrome_tmp[params->block_size_bits] = 0;
+    uint8_t syndrome0 [params->block_size] = 0; 
+    
+    // BIKE-2 syndrome0: s = c0*h0
+    modMult(syndrome0, h0, ct0, params->block_size, params); 
+    
+    
+    //Store the syndrome in a bit array
+    // Convert syndrome 1271 bytes to bit-array of 1271 size. 
+    // byteToBin(syndrome_tmp, syndrome0, block_size_bits); // size -> 10163
+
+    // Step 3 - Transpose the syndrome
+    // transpose(col, row, size) // col represents final syndrome and row is the 10163 binary syndrome from prev step.
+    // Ex.
+    // row = {A, B, C, D}
+    // col[0] = row[0] = A
+    // col[2] = row[3] = D
+    // col[3] = row[2] = C
+    // col[4] = row[1] = B
+    // transpose(syndrome->raw, s_tmp_bytes); // also pass in size of 10163 block_size_bits
+    transpose(syndrome, syndrome_tmp); // this will be final syndrome
+
+    
+}
+
+/**
+ * Simulates a 348 bit (48 byte) hash of the input
+ * @param output OUT the hash
+ * @param input IN byte array to hash
+ * @param length the length of the input
+ */
+void transpose(uint8_t *col, uint8_t *row, const uint8_t size)
+{
+    return;
+}
+
 
 /**
  * A dummy function placeholding the decode step for decaps_board
