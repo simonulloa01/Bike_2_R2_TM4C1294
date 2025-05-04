@@ -33,6 +33,9 @@ typedef struct
 #define AES256_KEY_SIZE 32
 #define AES256_KEY_BITS (AES256_KEY_SIZE * 8)
 #define AES256_BLOCK_SIZE 16
+#define DELTA_BIT_FLIPPING 10
+
+
 /**
  * @brief holds the parameters for BIKE-2 CPA with security level 1
  */
