@@ -18,7 +18,7 @@ typedef struct
 } bike2_params_t;
 
 #define BITS_IN_BYTE 8
-
+#define MAX_DECODER_ITERATIONS 1000
 // Note these definitions are for BIKE 2 CPA with security level 1
 #define R_BITS 10163
 #define R_SIZE (R_BITS % 8 == 0 ? R_BITS / 8 : R_BITS / 8 + 1)
