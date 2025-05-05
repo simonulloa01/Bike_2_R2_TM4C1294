@@ -3,7 +3,7 @@
 #include <string.h>
 #include "defs.h"
 #include "modArith.h"
-#include <sampling.h>
+#include "sampling.h"
 
 void keygen_board(uint8_t *pk, uint8_t *sk, const bike2_params_t *params);
 
