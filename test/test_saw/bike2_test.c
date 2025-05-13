@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h> 
 #include <string.h>
+#include <math.h>
 
 // #define TEST_SAW
 
@@ -15,7 +16,13 @@ typedef struct {
     uint16_t b;
 } UInt16Pair;
 
-// Functions to test
+// Helper 
+int getBit(const uint8_t *poly, int i);
+void set_bit(uint8_t* poly, size_t degree, int coeff);
+int degree(unsigned int n);
+
+// Functions to 
+uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2);
 uint8_t modAdd(const uint8_t *a, const uint8_t *b);
 uint8_t modMult(const uint8_t *a, const uint8_t *b);
 uint8_t polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size);
@@ -24,7 +31,7 @@ UInt16Pair keyGen(uint8_t *pk, uint8_t *sk);
 int main ()
 {
     // Testing the modAdd function
-    const uint8_t bin1 = 0b00010110;
+    const uint8_t bin1 = 0b00010011;
     const uint8_t bin2 = 0b00100011;  
     uint8_t sum = 0;
     sum = modAdd(&bin1, &bin2);
@@ -43,6 +50,121 @@ int main ()
     printf("Testing keyGen: The two values (%#x, %#x) --> %#x\n", h0, h1, keyGen_res);
 
     return 0;
+}
+
+int getBit(const uint8_t *poly, int i)
+{
+    return (poly[i / 8] >> (i % 8)) & 1;
+}
+
+// poly: Pointer to the uint8_t array representing the polynomial.
+// degree: The degree (position) of the term to set or clear.
+// coeff: The value to set at the specified degree (0 or 1).
+void set_bit(uint8_t* poly, size_t degree, int coeff) 
+{
+    size_t byte_index = degree / 8;
+    uint8_t bit_mask = 1 << (degree % 8);
+
+    if (coeff) 
+    {
+        poly[byte_index] |= bit_mask;  // Set the bit
+    } 
+    else
+    {
+        poly[byte_index] &= ~bit_mask; // Clear the bit
+    }
+}
+
+
+int degree(unsigned int n) 
+{
+    if (n == 0) 
+    {
+        return -1; // Undefined for polynomials with value 0.
+    }
+    return (int)log2(n);
+}
+
+// Optimized Polynomial Modular Multiplication Operation.
+uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2)
+{
+    // Step 0 -- define a base case 
+    // determine a max degree of polynomial in which we decide  to use our 
+    // naive multiplication approach which is modMult
+    // things we need: 
+    // - degree of provided polynomials
+    // - degree that suffices base case... maybe some analysis for this
+    // - call modMult and return product on provided polynomials.
+    if (degree(*poly1) <= 1 || degree(*poly2) >= 1)
+    {
+        return modMult(poly1, poly2);
+    }
+
+    uint8_t res = modAdd(poly1, poly2);
+
+    // Since this is the divide and conquer method lets find the degree of
+    // half of the poly1.
+    int half = floor(degree(*poly1) / 2);
+
+    // Step 1 -- Define polynomials of half sizes to represent the 
+    // upper and lower parts of the provided polynomials. Note that the
+    // polynomials will each be initialized to 0.
+    int A0_size = ((half - 1) + 7) / 8; 
+    int A1_size = ((degree(*poly1) - half) + 7) / 8; 
+    int B0_size = A0_size; 
+    int B1_size = A1_size; 
+
+    uint8_t A0[A0_size];
+    uint8_t A1[A1_size];
+    uint8_t B0[B0_size];
+    uint8_t B1[B1_size];
+
+    // Initialize the arrays to zero.
+    memset(A0, 0, A0_size * sizeof(uint8_t));
+    memset(A1, 0, A1_size * sizeof(uint8_t));
+    memset(B0, 0, B0_size * sizeof(uint8_t));
+    memset(B1, 0, B1_size * sizeof(uint8_t));
+
+    // Define upper polys to properly perform memcpy.
+    uint8_t upperPoly1[A1_size];
+    uint8_t upperPoly2[B1_size];
+
+    // Step 2 -- Set A0, A1, B0, B1 arrays.
+    // Set A0 to the lower half of poly1.
+    // Set A1 to the upper half of poly1.
+    // Set B0 to the lower half of poly2.
+    // Set B1 to the upper half of poly2.
+    for(int i = 0; i < half; ++i) 
+    {
+        set_bit(A0, i, getBit(poly1, i));
+        set_bit(B0, i, getBit(poly2, i));
+        set_bit(A1, i, getBit(poly1, i + half));
+        set_bit(B1, i, getBit(poly2, i + half));
+
+        if(degree(*poly1) % 2 == 1 && i + 1 == half) 
+        {
+            set_bit(A1, i, getBit(poly1, i + half));
+            set_bit(B1, i, getBit(poly2, i + half));
+        }
+    }
+    
+    // Under Construction -----
+    // ....
+    
+    uint8_t Y1 = modAdd(A0, A1);
+    uint8_t Y2 = modAdd(B0, B1);
+
+    // Step 3 -- Compute the main 3 multiplication operations of Karatsuba.
+    uint8_t U = karatsuba(A0, B0); // A0 * B0
+    uint8_t Y = karatsuba(Y1, Y2); // (A0 + A1) * (B0 + B1)
+    uint8_t Z = karatsuba(A1, B1); // A1 * B1
+
+    
+
+    // Polynomial W = Y - U - Z;
+    // res = U + (W.increaseExponent(half)) + (Z.increaseExponent(this->degree));
+    // return res;
+
 }
 
 
