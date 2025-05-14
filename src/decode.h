@@ -6,11 +6,17 @@
 #include "sampling.h"
 
 // decoding
+#define VAR_TH_FCT(x) (13.530 + 0.0069721 * (x))
+#define DELTA_BIT_FLIPPING 10
+#define S_BIT_FLIPPING 3000
 #define TTL_COEFF0 0.45
 #define TTL_COEFF1 1.1
 #define TTL_SATURATE 5
 #define max_iter 100
 #define TTL_MAX (TTL_SATURATE + 1)
+
+#define MIN(a, b) ((a > b) ? b : a);
+
 static inline int compute_ttl(int diff)
 {
     int ttl = (int)(diff * TTL_COEFF0 + TTL_COEFF1);

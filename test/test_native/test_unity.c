@@ -296,10 +296,10 @@ void test_modInv(void)
 
 void test_decode(void)
 {
-    uint8_t error[R_BITS*2];
+    uint8_t error[R_BITS * 2];
     decode(error, syndrome, h0, h1, &bike2_params_level_1);
 
-    for (int i=0; i<R_BITS*2; i++)
+    for (int i = 0; i < R_BITS * 2; i++)
     {
         TEST_ASSERT_EQUAL_UINT8(error[i], e[i]);
     }

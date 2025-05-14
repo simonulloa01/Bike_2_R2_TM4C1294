@@ -21,6 +21,17 @@ void convert2compact(uint32_t *out, const uint8_t *in)
     }
 }
 
+uint32_t get_predefined_threshold_var(const uint8_t s[R_BITS])
+{
+    // compute syndrome weight:
+    uint32_t syndromeWeight = get_hamming_weight(s, R_BITS);
+
+    // set threshold according to syndrome weight:
+    uint32_t threshold = ceil(VAR_TH_FCT(syndromeWeight));
+
+    return threshold;
+}
+
 /* $lnbino(n, t) = \ln {n \choose t}$ */
 static double lnbino(size_t n, size_t t)
 {
@@ -156,7 +167,8 @@ void flipAdjustedErrorPosition(uint8_t e[R_BITS * 2], uint32_t position)
 uint32_t ctr(
     uint32_t *h_compact_col,
     int position,
-    uint8_t syndrome[R_BITS], const bike2_params_t *params)
+    uint8_t syndrome[R_BITS],
+    const bike2_params_t *params)
 {
     size_t DV = params->row_weight / 2;
     uint32_t count = 0;
@@ -243,7 +255,44 @@ void recompute_syndrome(uint8_t syndrome[R_BITS],
     }
 }
 
-int decode(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params)
+void check(
+    uint8_t e[R_BITS * 2],
+    uint32_t *h0_compact_col,
+    uint32_t *h1_compact_col,
+    uint32_t *h0_compact,
+    uint32_t *h1_compact,
+    uint8_t s[R_BITS],
+    uint32_t *Jl,
+    uint32_t sizeJl,
+    int threshold,
+    const bike2_params_t *params)
+{
+    size_t DV = params->row_weight / 2;
+    for (uint32_t j = 0; j < sizeJl; j++)
+    {
+        uint32_t pos = Jl[j];
+        if (pos < R_BITS)
+        {
+            uint32_t counter_unsat_pos = ctr(h0_compact_col, pos, s, params);
+            if (counter_unsat_pos > (DV / 2))
+            {
+                flipAdjustedErrorPosition(e, pos);
+                recompute_syndrome(s, 1, &pos, h0_compact, h1_compact, params);
+            }
+        }
+        else
+        {
+            uint32_t counter_unsat_pos = ctr(h1_compact_col, pos - R_BITS, s, params);
+            if (counter_unsat_pos > (DV / 2))
+            {
+                flipAdjustedErrorPosition(e, pos);
+                recompute_syndrome(s, 1, &pos, h0_compact, h1_compact, params);
+            }
+        }
+    }
+}
+
+int decode_backflip(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params)
 
 {
     int DV = PUBLIC_KEY_WEIGHT;
@@ -393,4 +442,172 @@ int decode(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, 
         }
     }
     return !(syndrome_weight == syndrome_stop);
+}
+
+int decode_1st_round(uint8_t *e,
+                     uint8_t *s,
+                     uint8_t *h0,
+                     uint8_t *h1,
+                     bike2_params_t *params)
+{
+
+    int DV = PUBLIC_KEY_WEIGHT;
+    uint32_t h0_compact[DV];
+    uint32_t h1_compact[DV];
+
+    // convert h0 and h1 to compact
+    convert2compact(h0_compact, h0);
+    convert2compact(h1_compact, h1);
+
+    // computing the first column of each parity-check block:
+    uint32_t h0_compact_col[DV];
+    uint32_t h1_compact_col[DV];
+    getCol(h0_compact_col, h0_compact, DV);
+    getCol(h1_compact_col, h1_compact, DV);
+
+    // J: list of positions involved in more than
+    // (threshold - delta) unsatisfied p.c. equations:
+    uint32_t J[DELTA_BIT_FLIPPING][N_BITS] = {0};
+    uint32_t sizeJ[DELTA_BIT_FLIPPING] = {0};
+
+    // count the number of unsatisfied parity-checks:
+    uint8_t unsat_counter[N_BITS] = {0};
+    compute_counter_of_unsat(unsat_counter, s, h0_compact, h1_compact, params);
+
+    // LINE 1 of One-Round Bit Flipping Algorithm:
+    uint32_t threshold = get_predefined_threshold_var(s);
+
+    // LINES 2-4 of One-Round Bit Flipping Algorithm:
+    for (uint32_t i = 0; i < N_BITS; i++)
+    {
+        if (unsat_counter[i] > threshold - DELTA_BIT_FLIPPING)
+        {
+            uint32_t difference = threshold - MIN(threshold, unsat_counter[i]);
+            J[difference][sizeJ[difference]] = i;
+            sizeJ[difference]++;
+        }
+    }
+
+    // LINES 5-6 of One-Round Bit Flipping Algorithm:
+    for (uint32_t i = 0; i < sizeJ[0]; i++)
+    {
+        flipAdjustedErrorPosition(e, J[0][i]);
+    }
+
+    recompute_syndrome(s, sizeJ[0], J[0], h0_compact, h1_compact, params);
+
+    // check if decoding finished:
+    if (get_hamming_weight(s, R_BITS) <= 0)
+    {
+        return 0;
+    }
+
+    // LINES 7-10 of One-Round Bit Flipping Algorithm:
+    for (uint32_t i = 0; get_hamming_weight(s, R_BITS) > S_BIT_FLIPPING && i < N_BITS; i++)
+    {
+        for (int l = 0; l < DELTA_BIT_FLIPPING; l++)
+        {
+            check(e, h0_compact_col, h1_compact_col, h0_compact, h1_compact, s,
+                  J[l], sizeJ[l], DV / 2, params);
+        }
+    }
+
+    // check if decoding finished:
+    if (get_hamming_weight(s, R_BITS) <= 0)
+    {
+        return 0;
+    }
+
+    // LINES 11-12 of One-Round Bit Flipping Algorithm:
+    uint32_t errorPos[R_BITS] = {0};
+    int countError = 0;
+    for (uint32_t i = 0; i < 2 * R_BITS; i++)
+    {
+        if (e[i])
+        {
+            uint32_t posError = i;
+            if (i != 0 && i != R_BITS)
+            {
+                // the position in e is adjusted since syndrome is transposed
+                posError = (i > R_BITS) ? ((N_BITS - i) + R_BITS) : (R_BITS - i);
+            }
+            errorPos[countError++] = posError;
+        }
+    }
+    for (int j = 0; j < countError; j++)
+    {
+        uint32_t pos = errorPos[j];
+        uint32_t counter_unsat_pos;
+
+        if (pos < R_BITS)
+        {
+            counter_unsat_pos = ctr(h0_compact_col, pos, s, params);
+        }
+        else
+        {
+            counter_unsat_pos = ctr(h1_compact_col, pos - R_BITS, s, params);
+        }
+
+        if (counter_unsat_pos > (DV / 2))
+        {
+            flipAdjustedErrorPosition(e, pos);
+            recompute_syndrome(s, 1, &pos, h0_compact, h1_compact, params);
+        }
+    }
+
+    // check if decoding finished:
+    if (get_hamming_weight(s, R_BITS) <= 0)
+    {
+        return 0;
+    }
+
+    // LINES 13-15 of One-Round Bit Flipping Algorithm:
+    for (uint32_t k = 0; get_hamming_weight(s, R_BITS) > 0 && k < N_BITS; k++)
+    {
+        // find a random non-zero position in the syndrome:
+        uint32_t i = rand() % R_BITS;
+        while (!s[i])
+            i = (i + 1) % R_BITS;
+
+        int errorFound = 0;
+        for (int j = 0; j < DV && !errorFound; j++)
+        {
+            // finding position of 1 in the i-th row:
+            uint32_t pos = (h0_compact[j] + i) % R_BITS;
+            int counter_unsat_pos = ctr(h0_compact_col, pos, s, params);
+            if (counter_unsat_pos > (DV / 2))
+            {
+                flipAdjustedErrorPosition(e, pos);
+                recompute_syndrome(s, 1, &pos, h0_compact, h1_compact, params);
+                errorFound = 1;
+            }
+        }
+        for (int j = 0; j < DV && !errorFound; j++)
+        {
+            // finding position of 1 in the i-th row:
+            uint32_t pos = (h1_compact[j] + i) % R_BITS;
+            pos += R_BITS;
+            int counter_unsat_pos = ctr(h1_compact_col, pos, s, params);
+            if (counter_unsat_pos > (DV / 2))
+            {
+                flipAdjustedErrorPosition(e, pos);
+                recompute_syndrome(s, 1, &pos, h0_compact, h1_compact, params);
+                errorFound = 1;
+            }
+        }
+    }
+
+    // check if decoding succeeded:
+    if (get_hamming_weight(s, R_BITS) <= 0)
+    {
+        return 0;
+    }
+
+    return -1;
+}
+
+int decode(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params)
+{
+    return decode_1st_round(e, syndrome, h0, h1, params);
+    //return decode_backflip(e, syndrome, h0, h1, params);
 }
