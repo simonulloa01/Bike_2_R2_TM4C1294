@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h> 
 #include <string.h>
@@ -20,9 +21,10 @@ typedef struct {
 int getBit(const uint8_t *poly, int i);
 void set_bit(uint8_t* poly, size_t degree, int coeff);
 int degree(unsigned int n);
+void increaseExponent(uint8_t **poly, int degree, int n);
 
 // Functions to 
-uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2);
+uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2, int poly1_deg, int poly2_deg);
 uint8_t modAdd(const uint8_t *a, const uint8_t *b);
 uint8_t modMult(const uint8_t *a, const uint8_t *b);
 uint8_t polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size);
@@ -75,7 +77,6 @@ void set_bit(uint8_t* poly, size_t degree, int coeff)
     }
 }
 
-
 int degree(unsigned int n) 
 {
     if (n == 0) 
@@ -85,45 +86,61 @@ int degree(unsigned int n)
     return (int)log2(n);
 }
 
+void increaseExponent(uint8_t **poly, int degree, int n) 
+{
+    // Update the degree of the polynomial
+    degree += n;
+
+    // Allocate memory for the new coefficients array
+    uint8_t *new_poly = (uint8_t *)calloc(degree + 1, sizeof(uint8_t));
+    if (new_poly == NULL) 
+    {
+        perror("Failed to allocate memory");
+        exit(1);
+    }
+
+    // Copy existing coefficients to the new array
+    memcpy(new_poly + n, *poly, ((degree - n) + 1) * sizeof(uint8_t));
+
+    // Free the old coefficients array and update the pointer
+    free(*poly);
+    *poly = new_poly;
+}
+
+
 // Optimized Polynomial Modular Multiplication Operation.
-uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2)
+uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2, int poly1_deg, int poly2_deg)
 {
     // Step 0 -- define a base case 
     // determine a max degree of polynomial in which we decide  to use our 
     // naive multiplication approach which is modMult
     // things we need: 
     // - degree of provided polynomials
-    // - degree that suffices base case... maybe some analysis for this
     // - call modMult and return product on provided polynomials.
-    if (degree(*poly1) <= 1 || degree(*poly2) >= 1)
+    if (poly1_deg <= 1 || poly2_deg <= 1)
     {
         return modMult(poly1, poly2);
     }
 
-    uint8_t res = modAdd(poly1, poly2);
+    uint8_t *res = calloc(poly1_deg + poly2_deg, sizeof(uint8_t));
 
     // Since this is the divide and conquer method lets find the degree of
     // half of the poly1.
-    int half = floor(degree(*poly1) / 2);
+    int half = floor(poly1_deg / 2);
 
     // Step 1 -- Define polynomials of half sizes to represent the 
     // upper and lower parts of the provided polynomials. Note that the
     // polynomials will each be initialized to 0.
     int A0_size = ((half - 1) + 7) / 8; 
-    int A1_size = ((degree(*poly1) - half) + 7) / 8; 
+    int A1_size = ((poly1_deg - half) + 7) / 8; 
     int B0_size = A0_size; 
     int B1_size = A1_size; 
 
-    uint8_t A0[A0_size];
-    uint8_t A1[A1_size];
-    uint8_t B0[B0_size];
-    uint8_t B1[B1_size];
-
-    // Initialize the arrays to zero.
-    memset(A0, 0, A0_size * sizeof(uint8_t));
-    memset(A1, 0, A1_size * sizeof(uint8_t));
-    memset(B0, 0, B0_size * sizeof(uint8_t));
-    memset(B1, 0, B1_size * sizeof(uint8_t));
+    // Initialize the split polynomials.
+    uint8_t *A0 = calloc(A0_size, sizeof(uint8_t));
+    uint8_t *A1 = calloc(A1_size, sizeof(uint8_t));
+    uint8_t *B0 = calloc(B0_size, sizeof(uint8_t));
+    uint8_t *B1 = calloc(B1_size, sizeof(uint8_t));
 
     // Define upper polys to properly perform memcpy.
     uint8_t upperPoly1[A1_size];
@@ -147,24 +164,72 @@ uint8_t karatsuba(const uint8_t *poly1, const uint8_t *poly2)
             set_bit(B1, i, getBit(poly2, i + half));
         }
     }
+
+    // Initialize polynomials used to hold the product of the multiplication operations. 
+    int u_size = half * 2;
+    uint8_t *U = calloc(u_size, sizeof(uint8_t));
+    int z_size = ((poly1_deg - half - 1) + (poly2_deg - half - 1));
+    uint8_t *Z = calloc(((poly1_deg - half - 1) + (poly2_deg - half - 1)), sizeof(uint8_t));
+
+    // Get the max degree of the two polys to allocate sufficient space for helper poly.
+    int maxA0A1 = fmax(degree(*A0), degree(*A1));
+    uint8_t *A0_and_A1 = calloc(maxA0A1, sizeof(uint8_t));
+
+    int maxB0B1 = fmax(degree(*B0), degree(*B1));
+    uint8_t *B0_and_B1 = calloc(maxB0B1, sizeof(uint8_t));
     
-    // Under Construction -----
-    // ....
-    
-    uint8_t Y1 = modAdd(A0, A1);
-    uint8_t Y2 = modAdd(B0, B1);
+    int y_size = maxA0A1 + maxB0B1;
+    uint8_t *Y = calloc(y_size, sizeof(uint8_t));
+
+    int w_max_size = y_size;
+
+    if (u_size > w_max_size)
+    {
+        w_max_size = u_size;
+    }
+    if (z_size > w_max_size)
+    {
+        w_max_size = z_size;
+    }
+
+    uint8_t *W = calloc(w_max_size, sizeof(uint8_t)); 
 
     // Step 3 -- Compute the main 3 multiplication operations of Karatsuba.
-    uint8_t U = karatsuba(A0, B0); // A0 * B0
-    uint8_t Y = karatsuba(Y1, Y2); // (A0 + A1) * (B0 + B1)
-    uint8_t Z = karatsuba(A1, B1); // A1 * B1
+    // Compute U = A0 * B0
+    *U = karatsuba(A0, B0, half, half);
 
-    
+    // Compute Z = A1 * B1
+    *Z = karatsuba(A1, B1, poly1_deg - half - 1, poly2_deg - half - 1);
 
-    // Polynomial W = Y - U - Z;
-    // res = U + (W.increaseExponent(half)) + (Z.increaseExponent(this->degree));
-    // return res;
+    // Compute Y = (A0 + A1) * (B0 + B1)
+    *A0_and_A1 = modAdd(A0, A1);
+    *B0_and_B1 = modAdd(B0, B1);
+    *Y = karatsuba(A0_and_A1, B0_and_B1, half, half);
 
+    // Compute W = Y - U - Z 
+    // In GF(2) subtraction is the same operation as addition
+    *W = modAdd(Y, U);
+    *W = modAdd(W, Z);
+
+    increaseExponent(&W, degree(*W), half);
+    increaseExponent(&Z, degree(*Z), poly1_deg);
+
+    *res = modAdd(U, W);
+    *res = modAdd(res, Z);
+
+    // Free the split polynomials.
+    free(A0); 
+    free(A1); 
+    free(B0); 
+    free(B1);
+    free(U); 
+    free(Z); 
+    free(A0_and_A1); 
+    free(B0_and_B1); 
+    free(Y); 
+    free(W);
+
+    return *res;
 }
 
 
