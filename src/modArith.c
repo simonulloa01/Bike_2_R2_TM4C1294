@@ -6,14 +6,13 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
     uint32_t product_bits = 2 * size;
     uint32_t product_bytes = (product_bits + 7u) / 8u;
 
-    
     uint8_t product[product_bytes];
     memset(product, 0, product_bytes);
 
-    //foreach bit
+    // foreach bit
     for (uint32_t i = 0; i < size; i++)
     {
-        //check if bit i in 'a' is set 
+        // check if bit i in 'a' is set
         uint32_t a_byte = i / 8;
         uint32_t a_bit = i % 8;
         bool a_is_set = (a[a_byte] & (1u << a_bit)) != 0;
@@ -23,7 +22,7 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
             // For each bit j of b(x):
             for (uint32_t j = 0; j < size; j++)
             {
-                //check if bit j in 'b' is set
+                // check if bit j in 'b' is set
                 uint32_t b_byte = j / 8;
                 uint32_t b_bit = j % 8;
                 bool b_is_set = (b[b_byte] & (1u << b_bit)) != 0;
@@ -39,33 +38,33 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
         }
     }
 
-    //reduce
+    // reduce
     polyMod(dst, product, product_bits, params);
 }
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
-
-    // Do not perform arithmetic on polynomial's a and b if they are NULL.
-    if ((a != NULL) && (b != NULL))
+    //XOR in 32-bit chunks
+    uint32_t i = 0;
+    for (; i + 4 <= size; i += 4)
     {
-        // Adding the two binary polynomials is the equivalent of the XOR
-        // operation. One of the reasons for this is because the inverse of
-        // number is itself. For example, 1 plus 1 is 0, since the number
-        // is its own inverse.
-        for (uint32_t i = 0; i < size; i++)
-        {
-            dst[i] = a[i] ^ b[i];
-        }
+        *((uint32_t *)(dst + i)) = *((uint32_t *)(a + i)) ^ *((uint32_t *)(b + i));
+    }
+    //remainder
+    for (; i < size; i++)
+    {
+        dst[i] = a[i] ^ b[i];
     }
 }
+
+
 
 // size of the polynomial in bits
 void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size, const bike2_params_t *params)
 {
     // r = exponent for x^r -1
     const uint32_t r = params->block_size_bits;
-    
+
     const uint32_t a_bytes = (size + 7u) / 8u;
     const uint32_t r_bytes = (r + 7u) / 8u;
 
@@ -74,14 +73,14 @@ void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size, const bike2_pa
     memset(remainder, 0, a_bytes);
     memcpy(remainder, a, a_bytes);
 
-    //For each set bit i >= r, fold it to (i - r) from highest bit
+    // For each set bit i >= r, fold it to (i - r) from highest bit
     for (int i = (int)size - 1; i >= (int)r; i--)
     {
         uint32_t bytePos = (uint32_t)i / 8u;
         uint32_t bitPos = (uint32_t)i % 8u;
         uint8_t mask = (uint8_t)(1u << bitPos);
 
-        //check if set
+        // check if set
         if (remainder[bytePos] & mask)
         {
             // clear bit i
@@ -96,7 +95,6 @@ void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size, const bike2_pa
             remainder[jb] ^= jmask;
         }
     }
-
 
     memset(dst, 0, r_bytes);
     const uint32_t toCopy = (a_bytes < r_bytes) ? a_bytes : r_bytes;
