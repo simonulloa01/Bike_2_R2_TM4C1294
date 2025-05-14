@@ -29,5 +29,5 @@ static double counters_C0(size_t n, size_t d, size_t w, size_t S, size_t t,
 static double counters_C1(size_t n, size_t d, size_t w, size_t S, size_t t,
                           double x);
 
-int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params);
+int decode(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params);
 #endif

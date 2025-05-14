@@ -4,6 +4,7 @@
 #include <unity.h>
 #include <sampling.h>
 #include <bike2-board.h>
+#include "hardcoded.h"
 
 const bike2_params_t test_params_small = {
     .block_size = 2,
@@ -284,15 +285,24 @@ void test_modInv(void)
         .row_weight = 2,
         .target_error = 2,
         .code_length = 6};
-    
 
-    uint8_t a = 0x03;            
-    uint8_t expected_inv = 0x06; 
+    uint8_t a = 0x03;
+    uint8_t expected_inv = 0x06;
     uint8_t result = 0;
     modMult(&result, &a, &expected_inv, mini_params.block_size, &mini_params);
     printf("result: %#x\n", result);
     TEST_ASSERT_EQUAL_UINT8(0x01, result); // 0b001 => 1
+}
 
+void test_decode(void)
+{
+    uint8_t error[R_BITS*2];
+    decode(error, syndrome, h0, h1, &bike2_params_level_1);
+
+    for (int i=0; i<R_BITS*2; i++)
+    {
+        TEST_ASSERT_EQUAL_UINT8(error[i], e[i]);
+    }
 }
 
 int main(void)
@@ -308,5 +318,6 @@ int main(void)
     RUN_TEST(test_modAdd);
     RUN_TEST(test_polyMod);
     RUN_TEST(test_modMult);
+    RUN_TEST(test_decode);
     return UNITY_END();
 }
