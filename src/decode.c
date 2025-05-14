@@ -1,14 +1,25 @@
 #include "decode.h"
 
-static double lnbino(size_t n, size_t t);
-static double xlny(double x, double y);
-static double lnbinomialpmf(size_t n, size_t k, double p, double q);
-static double Euh_log(size_t n, size_t w, size_t t, size_t i);
-static double iks(size_t r, size_t n, size_t w, size_t t);
-static double counters_C0(size_t n, size_t d, size_t w, size_t S, size_t t,
-                          double x);
-static double counters_C1(size_t n, size_t d, size_t w, size_t S, size_t t,
-                          double x);
+void convert2compact(uint32_t *out, const uint8_t *in)
+{
+    uint32_t idx = 0;
+
+    for (uint32_t i = 0; i < R_SIZE; i++)
+    {
+        for (uint32_t j = 0; j < 8ULL; j++)
+        {
+            if ((i * 8 + j) == R_BITS)
+            {
+                break;
+            }
+
+            if ((in[i] >> j) & 1)
+            {
+                out[idx++] = i * 8 + j;
+            }
+        }
+    }
+}
 
 /* $lnbino(n, t) = \ln {n \choose t}$ */
 static double lnbino(size_t n, size_t t)
@@ -108,8 +119,8 @@ size_t compute_threshold(size_t r, size_t n, size_t d, size_t w, size_t S,
 }
 
 void getCol(
-    uint8_t *h_compact_col,
-    const uint8_t *h_compact_row, uint32_t DV)
+    uint32_t *h_compact_col,
+    const uint32_t *h_compact_row, uint32_t DV)
 {
     if (h_compact_row[0] == 0)
     {
@@ -143,24 +154,24 @@ void flipAdjustedErrorPosition(uint8_t e[R_BITS * 2], uint32_t position)
 }
 
 uint32_t ctr(
-    uint8_t *h_compact_col,
+    uint32_t *h_compact_col,
     int position,
-    uint8_t s[R_BITS], const bike2_params_t *params)
+    uint8_t syndrome[R_BITS], const bike2_params_t *params)
 {
     size_t DV = params->row_weight / 2;
     uint32_t count = 0;
     for (uint32_t i = 0; i < DV; i++)
     {
-        if (s[(h_compact_col[i] + position) % R_BITS])
+        if (syndrome[(h_compact_col[i] + position) % R_BITS])
             count++;
     }
     return count;
 }
 
 void compute_counter_of_unsat(uint8_t unsat_counter[N_BITS],
-                              const uint8_t s[R_BITS],
-                              const uint8_t *h0_compact,
-                              const uint8_t *h1_compact, const bike2_params_t *params)
+                              const uint8_t syndrome[R_BITS],
+                              const uint32_t *h0_compact,
+                              const uint32_t *h1_compact, const bike2_params_t *params)
 {
     size_t DV = params->row_weight / 2;
     uint8_t unsat_counter2[N_BITS * 2] = {0};
@@ -173,7 +184,7 @@ void compute_counter_of_unsat(uint8_t unsat_counter[N_BITS],
 
     for (uint32_t i = 0; i < R_BITS; i++)
     {
-        if (!s[i])
+        if (!syndrome[i])
         {
             continue;
         }
@@ -193,11 +204,11 @@ void compute_counter_of_unsat(uint8_t unsat_counter[N_BITS],
     }
 }
 
-void recompute_syndrome(uint8_t s[R_BITS],
+void recompute_syndrome(uint8_t syndrome[R_BITS],
                         const uint32_t numPositions,
                         const uint32_t positions[N_BITS],
-                        const uint8_t *h0_compact,
-                        const uint8_t *h1_compact,
+                        const uint32_t *h0_compact,
+                        const uint32_t *h1_compact,
                         const bike2_params_t *params)
 {
     size_t DV = params->row_weight / 2;
@@ -210,11 +221,11 @@ void recompute_syndrome(uint8_t s[R_BITS],
             {
                 if (h0_compact[j] <= pos)
                 {
-                    s[pos - h0_compact[j]] ^= 1;
+                    syndrome[pos - h0_compact[j]] ^= 1;
                 }
                 else
                 {
-                    s[R_BITS - h0_compact[j] + pos] ^= 1;
+                    syndrome[R_BITS - h0_compact[j] + pos] ^= 1;
                 }
             }
         }
@@ -224,30 +235,36 @@ void recompute_syndrome(uint8_t s[R_BITS],
             for (uint32_t j = 0; j < DV; j++)
             {
                 if (h1_compact[j] <= pos)
-                    s[pos - h1_compact[j]] ^= 1;
+                    syndrome[pos - h1_compact[j]] ^= 1;
                 else
-                    s[R_BITS - h1_compact[j] + pos] ^= 1;
+                    syndrome[R_BITS - h1_compact[j] + pos] ^= 1;
             }
         }
     }
 }
 
-int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params)
-{
+int decode(uint8_t *e, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params)
 
-    size_t DV = params->row_weight / 2;
+{
+    int DV = PUBLIC_KEY_WEIGHT;
+    uint32_t h0_compact[DV];
+    uint32_t h1_compact[DV];
     size_t index = 2; // number of cyclic blocks
     size_t block_length = R_BITS;
     size_t block_weight = DV;
     size_t syndrome_stop = 0;
 
+    // convert h0 and h1 to compact
+    convert2compact(h0_compact, h0);
+    convert2compact(h1_compact, h1);
+
     // sparse_t *Hcolumns = dec->Hcolumns;
     // sparse_t *Hrows = dec->Hrows;
     //  computing the first column of each parity-check block:
-    uint8_t h0_compact_col[DV];
-    uint8_t h1_compact_col[DV];
-    getCol(h0_compact_col, h0, DV);
-    getCol(h1_compact_col, h1, DV);
+    uint32_t h0_compact_col[DV];
+    uint32_t h1_compact_col[DV];
+    getCol(h0_compact_col, h0_compact, DV);
+    getCol(h1_compact_col, h1_compact, DV);
 
     // creating ring buffer data structure:
     ring_buffer_t flips = rb_alloc(2 * params->target_error);
@@ -269,7 +286,7 @@ int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1,
     {
         ++iterations;
         // compute_counters(index, block_length, block_weight, Hcolumns, Hrows, syndrome, counters);
-        compute_counter_of_unsat(unsat_counter, syndrome, h0, h1, params);
+        compute_counter_of_unsat(unsat_counter, syndrome, h0_compact, h1_compact, params);
 
         // int t = param->error_weight - dec->flips->length;
         int t = params->target_error - flips->length;
@@ -320,7 +337,7 @@ int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1,
                     }
 
                     // single_flip(param, syndrome, Hcolumns[k], j);
-                    recompute_syndrome(syndrome, 1, &pos, h0, h1, params);
+                    recompute_syndrome(syndrome, 1, &pos, h0_compact, h1_compact, params);
 
                     bits[k][j] ^= 1;
                     syndrome_weight += block_weight - 2 * counter;
@@ -357,7 +374,7 @@ int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1,
                     }
 
                     // single_flip(param, syndrome, Hcolumns[k], j);
-                    recompute_syndrome(syndrome, 1, &pos, h0, h1, params);
+                    recompute_syndrome(syndrome, 1, &pos, h0_compact, h1_compact, params);
 
                     bits[k][j] ^= 1;
                     syndrome_weight += block_weight - 2 * counter;
@@ -371,7 +388,7 @@ int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1,
         {
             if (bits[k][j])
             {
-                flipAdjustedErrorPosition(ss, k * R_BITS + j);
+                flipAdjustedErrorPosition(e, k * R_BITS + j);
             }
         }
     }

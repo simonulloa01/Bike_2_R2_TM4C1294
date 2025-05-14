@@ -19,5 +19,15 @@ static inline int compute_ttl(int diff)
     return (ttl > TTL_SATURATE) ? TTL_SATURATE : ttl;
 }
 
+static double lnbino(size_t n, size_t t);
+static double xlny(double x, double y);
+static double lnbinomialpmf(size_t n, size_t k, double p, double q);
+static double Euh_log(size_t n, size_t w, size_t t, size_t i);
+static double iks(size_t r, size_t n, size_t w, size_t t);
+static double counters_C0(size_t n, size_t d, size_t w, size_t S, size_t t,
+                          double x);
+static double counters_C1(size_t n, size_t d, size_t w, size_t S, size_t t,
+                          double x);
+
 int decode(uint8_t *ss, uint8_t *syndrome, const uint8_t *h0, const uint8_t *h1, const bike2_params_t *params);
 #endif
