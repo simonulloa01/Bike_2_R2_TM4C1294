@@ -44,20 +44,36 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
 {
-    //XOR in 32-bit chunks
+    // XOR in 32-bit chunks
+    if (a == NULL || b == NULL)
+    {
+        return;
+    }
     uint32_t i = 0;
     for (; i + 4 <= size; i += 4)
     {
         *((uint32_t *)(dst + i)) = *((uint32_t *)(a + i)) ^ *((uint32_t *)(b + i));
     }
-    //remainder
+    // remainder
     for (; i < size; i++)
     {
         dst[i] = a[i] ^ b[i];
     }
 }
-
-
+void modAddOld(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size)
+{
+    if ((a != NULL) && (b != NULL))
+    {
+        // Adding the two binary polynomials is the equivalent of the XOR
+        // operation. One of the reasons for this is because the inverse of
+        // number is itself. For example, 1 plus 1 is 0, since the number
+        // is its own inverse.
+        for (uint32_t i = 0; i < size; i++)
+        {
+            dst[i] = a[i] ^ b[i];
+        }
+    }
+}
 
 // size of the polynomial in bits
 void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t size, const bike2_params_t *params)

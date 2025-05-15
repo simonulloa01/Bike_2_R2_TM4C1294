@@ -12,6 +12,8 @@ void modMult(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t si
 
 void modAdd(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size);
 
+void modAddOld(uint8_t *dst, const uint8_t *a, const uint8_t *b, const uint32_t size);
+
 void polyMod(uint8_t *dst, const uint8_t *a, const uint32_t a_bits, const bike2_params_t *params);
 
 

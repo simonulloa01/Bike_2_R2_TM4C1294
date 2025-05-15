@@ -4,6 +4,7 @@
 #include <unity.h>
 #include <sampling.h>
 #include <bike2-board.h>
+#include <time.h> // For clock()
 
 const bike2_params_t test_params_small = {
     .block_size = 2,
@@ -295,6 +296,48 @@ void test_modInv(void)
 
 }
 
+void test_modAdd_performance(void)
+{
+    const uint32_t ARRAY_SIZE_BYTES = 256; 
+    const uint32_t NUM_ITERATIONS = 100000; 
+
+    uint8_t a[ARRAY_SIZE_BYTES];
+    uint8_t b[ARRAY_SIZE_BYTES];
+    uint8_t result[ARRAY_SIZE_BYTES];
+
+    // Initialize arrays with some data
+    for (uint32_t i = 0; i < ARRAY_SIZE_BYTES; i++)
+    {
+        a[i] = (uint8_t)(rand() % 256);
+        b[i] = (uint8_t)(rand() % 256);
+    }
+
+    clock_t start_time, end_time;
+    double time_taken_modAdd, time_taken_modAddOld;
+    // New modAdd function
+    start_time = clock();
+    for (uint32_t i = 0; i < NUM_ITERATIONS; i++)
+    {
+        modAdd(result, a, b, ARRAY_SIZE_BYTES);
+    }
+    end_time = clock();
+    time_taken_modAdd = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+    printf("modAdd(new) performance: %f seconds or %f clocks for %u iterations.\n", time_taken_modAdd,(double)(end_time-start_time), NUM_ITERATIONS);
+    // Old modAdd function
+    memset(result, 0, ARRAY_SIZE_BYTES); 
+    start_time = clock();
+    for (uint32_t i = 0; i < NUM_ITERATIONS; i++)
+    {
+        modAddOld(result, a, b, ARRAY_SIZE_BYTES);
+    }
+    end_time = clock();
+    time_taken_modAddOld = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+    printf("modAdd(old) performance: %f seconds or %f clocks for %u iterations.\n", time_taken_modAddOld,(double)(end_time-start_time), NUM_ITERATIONS);
+
+    
+    TEST_PASS_MESSAGE("Performance results printed to console.");
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -308,5 +351,6 @@ int main(void)
     RUN_TEST(test_modAdd);
     RUN_TEST(test_polyMod);
     RUN_TEST(test_modMult);
+    RUN_TEST(test_modAdd_performance);
     return UNITY_END();
 }
